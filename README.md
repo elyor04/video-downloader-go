@@ -1,19 +1,39 @@
-# README
+# Video Downloader
 
-## About
+Download videos and audio from YouTube, Instagram, TikTok, and other sites — with a queue for multiple downloads at once, resolution and format selection, and a Material-styled desktop interface. A Go/[Wails](https://wails.io) rewrite of [the original PyQt/QML version](https://github.com/elyor04/video-downloader).
 
-This is the official Wails React-TS template.
+## Features
 
-You can configure the project by editing `wails.json`. More information about the project settings can be found
-here: https://wails.io/docs/reference/project-config
+- Paste a URL and it's automatically previewed (title and thumbnail) before you add it — no separate "Fetch" step; the Download button enables once the preview succeeds, and any failure (bad link, network issue, site blocking the request) shows up as a clear error dialog
+- Add several URLs and download up to 2 at a time; the rest wait in a queue and start automatically
+- Video or audio mode, resolution selection (narrowed to what's actually available once a video is previewed), optional format conversion (mp4/mkv/webm/mp3/m4a/wav)
+- Playlist detection with a confirmation prompt before downloading an entire playlist
+- Sign-in / video-password support for gated content
+- Each download runs in its own isolated process, so a failure in one never affects the app or other downloads, and cancelling is immediate
+- Native OS notification when a download finishes while the window isn't focused; output folder and language are remembered across restarts
+- Interface available in English, Russian, and Uzbek (switchable at any time, top-right)
 
-## Live Development
+## Installation
 
-To run in live development mode, run `wails dev` in the project directory. This will run a Vite development
-server that will provide very fast hot reload of your frontend changes. If you want to develop in a browser
-and have access to your Go methods, there is also a dev server that runs on http://localhost:34115. Connect
-to this in your browser, and you can call your Go code from devtools.
+- [Go](https://go.dev) 1.23+
+- [Node.js](https://nodejs.org) 18+
+- The [Wails CLI](https://wails.io/docs/gettingstarted/installation):
+  ```
+  go install github.com/wailsapp/wails/v2/cmd/wails@latest
+  ```
 
-## Building
+### yt-dlp & FFmpeg
 
-To build a redistributable, production mode package, use `wails build`.
+Unlike the original, these aren't installed manually — `wails dev`/`wails build` fetch the pinned yt-dlp and FFmpeg binaries into `bin/` automatically (see `tools/fetchytdlp`, `tools/fetchffmpeg`).
+
+## Usage
+
+```
+wails dev
+```
+
+To build a redistributable instead of running in development mode:
+
+```
+wails build
+```
