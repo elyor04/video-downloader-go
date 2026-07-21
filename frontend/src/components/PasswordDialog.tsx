@@ -1,5 +1,8 @@
 import {useEffect, useState} from 'react'
 import {useTranslation} from 'react-i18next'
+import Button from '@mui/material/Button'
+import DialogContentText from '@mui/material/DialogContentText'
+import TextField from '@mui/material/TextField'
 import {SkipAuthentication, SubmitPassword} from '../../wailsjs/go/main/App'
 import type {AuthPrompt} from '../types'
 import Modal from './Modal'
@@ -31,18 +34,18 @@ export default function PasswordDialog({prompt, onResolved}: Props) {
             title={t('passwordDialog.title')}
             actions={
                 <>
-                    <button className="btn" onClick={skip}>{t('passwordDialog.skip')}</button>
-                    <button className="btn btn-primary" onClick={submit} disabled={password.length === 0}>
+                    <Button onClick={skip}>{t('passwordDialog.skip')}</Button>
+                    <Button variant="contained" onClick={submit} disabled={password.length === 0}>
                         {t('passwordDialog.submit')}
-                    </button>
+                    </Button>
                 </>
             }
         >
-            <p className="modal-text modal-text-muted">
+            <DialogContentText color="text.secondary" sx={{whiteSpace: 'pre-line'}}>
                 {t('passwordDialog.message', {url: prompt.url})}
-            </p>
-            <input
-                className="text-field"
+            </DialogContentText>
+            <TextField
+                size="small"
                 type="password"
                 placeholder={t('passwordDialog.password') ?? ''}
                 value={password}

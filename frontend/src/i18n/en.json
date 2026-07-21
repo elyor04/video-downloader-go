@@ -3,7 +3,8 @@
     "title": "Video Downloader",
     "downloads": "Downloads",
     "clearCompleted": "Clear Completed",
-    "error": "Error"
+    "error": "Error",
+    "ok": "OK"
   },
   "addJobSection": {
     "urlPlaceholder": "Paste a video or playlist URL…",
@@ -74,5 +75,10 @@
     "en": "English",
     "ru": "Русский",
     "uz": "Oʻzbekcha"
+  },
+  "titleBar": {
+    "minimize": "Minimize",
+    "maximize": "Maximize",
+    "close": "Close"
   }
 }

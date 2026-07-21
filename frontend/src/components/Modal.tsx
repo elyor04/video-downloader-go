@@ -1,4 +1,8 @@
 import type {ReactNode} from 'react'
+import Dialog from '@mui/material/Dialog'
+import DialogActions from '@mui/material/DialogActions'
+import DialogContent from '@mui/material/DialogContent'
+import DialogTitle from '@mui/material/DialogTitle'
 
 interface ModalProps {
     title: string
@@ -8,12 +12,10 @@ interface ModalProps {
 
 export default function Modal({title, children, actions}: ModalProps) {
     return (
-        <div className="modal-overlay">
-            <div className="modal-box" role="dialog" aria-modal="true">
-                <h2 className="modal-title">{title}</h2>
-                <div className="modal-body">{children}</div>
-                <div className="modal-actions">{actions}</div>
-            </div>
-        </div>
+        <Dialog open onClose={() => {}} fullWidth maxWidth="xs">
+            <DialogTitle sx={{fontWeight: 700}}>{title}</DialogTitle>
+            <DialogContent sx={{display: 'flex', flexDirection: 'column', gap: 1.5}}>{children}</DialogContent>
+            <DialogActions>{actions}</DialogActions>
+        </Dialog>
     )
 }

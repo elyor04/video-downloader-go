@@ -1,4 +1,6 @@
 import {useTranslation} from 'react-i18next'
+import Button from '@mui/material/Button'
+import DialogContentText from '@mui/material/DialogContentText'
 import {ConfirmPlaylist} from '../../wailsjs/go/main/App'
 import type {PlaylistPrompt} from '../types'
 import Modal from './Modal'
@@ -21,18 +23,18 @@ export default function PlaylistConfirmDialog({prompt, onResolved}: Props) {
             title={t('playlistDialog.title')}
             actions={
                 <>
-                    <button className="btn" onClick={() => respond(false)}>{t('playlistDialog.no')}</button>
-                    <button className="btn btn-primary" onClick={() => respond(true)} autoFocus>
+                    <Button onClick={() => respond(false)}>{t('playlistDialog.no')}</Button>
+                    <Button variant="contained" onClick={() => respond(true)} autoFocus>
                         {t('playlistDialog.yes')}
-                    </button>
+                    </Button>
                 </>
             }
         >
-            <p className="modal-text">
+            <DialogContentText>
                 {prompt.count > 0
                     ? t('playlistDialog.withCount', {count: prompt.count})
                     : t('playlistDialog.withoutCount')}
-            </p>
+            </DialogContentText>
         </Modal>
     )
 }

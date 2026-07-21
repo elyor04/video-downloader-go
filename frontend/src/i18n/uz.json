@@ -3,7 +3,8 @@
     "title": "Video Yuklovchi",
     "downloads": "Yuklab olishlar",
     "clearCompleted": "Tugallanganlarni tozalash",
-    "error": "Xato"
+    "error": "Xato",
+    "ok": "OK"
   },
   "addJobSection": {
     "urlPlaceholder": "Video yoki pleylist havolasini joylashtiring…",
@@ -74,5 +75,10 @@
     "en": "English",
     "ru": "Русский",
     "uz": "Oʻzbekcha"
+  },
+  "titleBar": {
+    "minimize": "Yig'ish",
+    "maximize": "Yoyish",
+    "close": "Yopish"
   }
 }
