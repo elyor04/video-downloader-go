@@ -77,12 +77,12 @@ export default function JobRow({job}: {job: JobDTO}) {
                     </button>
                 )}
                 {job.canCancel && (
-                    <button className="btn-link" onClick={() => CancelJob(job.jobId)}>
+                    <button className="btn-link btn-link-danger" onClick={() => CancelJob(job.jobId)}>
                         {t('job.cancel')}
                     </button>
                 )}
                 {job.canRemove && (
-                    <button className="btn-link" onClick={() => RemoveJob(job.jobId)}>
+                    <button className="btn-link btn-link-danger" onClick={() => RemoveJob(job.jobId)}>
                         {t('job.remove')}
                     </button>
                 )}

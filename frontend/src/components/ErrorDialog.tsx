@@ -12,7 +12,7 @@ export default function ErrorDialog({message, onClose}: Props) {
         <Modal title={t('app.error')} actions={
             <button className="btn btn-primary" onClick={onClose} autoFocus>OK</button>
         }>
-            <p className="modal-text">{message}</p>
+            <p className="modal-text modal-text-error">{message}</p>
         </Modal>
     )
 }
