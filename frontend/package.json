@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "postinstall": "go run ../tools/fetchytdlp && go run ../tools/fetchffmpeg"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
