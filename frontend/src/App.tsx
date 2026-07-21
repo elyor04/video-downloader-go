@@ -1,4 +1,10 @@
 import {useTranslation} from 'react-i18next'
+import Box from '@mui/material/Box'
+import Button from '@mui/material/Button'
+import MenuItem from '@mui/material/MenuItem'
+import Select from '@mui/material/Select'
+import Stack from '@mui/material/Stack'
+import Typography from '@mui/material/Typography'
 import {ClearCompleted, SetLanguage} from '../wailsjs/go/main/App'
 import AddJobSection from './components/AddJobSection'
 import ErrorDialog from './components/ErrorDialog'
@@ -6,6 +12,7 @@ import LoginDialog from './components/LoginDialog'
 import PasswordDialog from './components/PasswordDialog'
 import PlaylistConfirmDialog from './components/PlaylistConfirmDialog'
 import QueueList from './components/QueueList'
+import TitleBar from './components/TitleBar'
 import {useBackendEvents} from './hooks/useBackendEvents'
 
 const LANGUAGES: Array<{code: string; labelKey: string}> = [
@@ -30,45 +37,54 @@ export default function App() {
     }
 
     return (
-        <div className="app">
-            <header className="app-header">
-                <h1>{t('app.title')}</h1>
-                <select
-                    className="select language-select"
-                    value={i18n.language}
-                    onChange={(e) => changeLanguage(e.target.value)}
-                >
-                    {LANGUAGES.map((lang) => (
-                        <option key={lang.code} value={lang.code}>
-                            {t(lang.labelKey)}
-                        </option>
-                    ))}
-                </select>
-            </header>
+        <Box sx={{display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden'}}>
+            <TitleBar/>
 
-            <AddJobSection state={state} />
+            <Box sx={{display: 'flex', flexDirection: 'column', gap: 1.5, p: 1.5, flex: '1 1 auto', minHeight: 0}}>
+                <Stack direction="row" sx={{alignItems: 'center'}}>
+                    <Typography sx={{fontSize: 20, fontWeight: 700, flex: 1}}>
+                        {t('app.title')}
+                    </Typography>
+                    <Select
+                        size="small"
+                        value={i18n.language}
+                        onChange={(e) => changeLanguage(e.target.value)}
+                        sx={{minWidth: 140}}
+                    >
+                        {LANGUAGES.map((lang) => (
+                            <MenuItem key={lang.code} value={lang.code}>
+                                {t(lang.labelKey)}
+                            </MenuItem>
+                        ))}
+                    </Select>
+                </Stack>
 
-            <div className="row downloads-header">
-                <h2>{t('app.downloads')}</h2>
-                <button className="btn-link" onClick={() => ClearCompleted()}>
-                    {t('app.clearCompleted')}
-                </button>
-            </div>
+                <AddJobSection state={state}/>
 
-            <QueueList jobs={state.jobs} />
+                <Stack direction="row" sx={{justifyContent: 'space-between', alignItems: 'center'}}>
+                    <Typography variant="subtitle1" sx={{fontWeight: 700}}>
+                        {t('app.downloads')}
+                    </Typography>
+                    <Button size="small" onClick={() => ClearCompleted()}>
+                        {t('app.clearCompleted')}
+                    </Button>
+                </Stack>
+
+                <QueueList jobs={state.jobs}/>
+            </Box>
 
             {state.errorMessage !== null && (
-                <ErrorDialog message={state.errorMessage} onClose={dismissError} />
+                <ErrorDialog message={state.errorMessage} onClose={dismissError}/>
             )}
             {state.playlistPrompt !== null && (
-                <PlaylistConfirmDialog prompt={state.playlistPrompt} onResolved={dismissPlaylistPrompt} />
+                <PlaylistConfirmDialog prompt={state.playlistPrompt} onResolved={dismissPlaylistPrompt}/>
             )}
             {state.loginPrompt !== null && (
-                <LoginDialog prompt={state.loginPrompt} onResolved={dismissLoginPrompt} />
+                <LoginDialog prompt={state.loginPrompt} onResolved={dismissLoginPrompt}/>
             )}
             {state.passwordPrompt !== null && (
-                <PasswordDialog prompt={state.passwordPrompt} onResolved={dismissPasswordPrompt} />
+                <PasswordDialog prompt={state.passwordPrompt} onResolved={dismissPasswordPrompt}/>
             )}
-        </div>
+        </Box>
     )
 }

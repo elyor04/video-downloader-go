@@ -3,7 +3,8 @@
     "title": "Видео Загрузчик",
     "downloads": "Загрузки",
     "clearCompleted": "Очистить завершённые",
-    "error": "Ошибка"
+    "error": "Ошибка",
+    "ok": "OK"
   },
   "addJobSection": {
     "urlPlaceholder": "Вставьте ссылку на видео или плейлист…",
@@ -74,5 +75,10 @@
     "en": "English",
     "ru": "Русский",
     "uz": "Oʻzbekcha"
+  },
+  "titleBar": {
+    "minimize": "Свернуть",
+    "maximize": "Развернуть",
+    "close": "Закрыть"
   }
 }

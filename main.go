@@ -46,6 +46,7 @@ func main() {
 		Height:           760,
 		MinWidth:         520,
 		MinHeight:        480,
+		Frameless:        true,
 		BackgroundColour: options.NewRGB(18, 18, 18),
 		AssetServer: &assetserver.Options{
 			Assets: assets,

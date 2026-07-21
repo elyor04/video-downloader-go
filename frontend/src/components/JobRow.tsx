@@ -1,4 +1,14 @@
 import {useTranslation} from 'react-i18next'
+import Avatar from '@mui/material/Avatar'
+import Box from '@mui/material/Box'
+import Button from '@mui/material/Button'
+import Chip from '@mui/material/Chip'
+import LinearProgress from '@mui/material/LinearProgress'
+import Paper from '@mui/material/Paper'
+import Stack from '@mui/material/Stack'
+import Typography from '@mui/material/Typography'
+import MusicNoteIcon from '@mui/icons-material/MusicNote'
+import PlayArrowIcon from '@mui/icons-material/PlayArrow'
 import {CancelJob, OpenOutputFolder, RemoveJob} from '../../wailsjs/go/main/App'
 import type {JobDTO} from '../types'
 
@@ -50,43 +60,49 @@ export default function JobRow({job}: {job: JobDTO}) {
     const indeterminate = job.progress < 0 && job.jobState !== 'error' && job.jobState !== 'cancelled'
 
     return (
-        <div className="job-row">
-            <div className="job-thumb">
-                {job.thumbnail ? (
-                    <img src={job.thumbnail} alt="" />
-                ) : (
-                    <span className="job-thumb-fallback">{job.mode === 'audio' ? '♪' : '▶'}</span>
-                )}
-            </div>
+        <Paper variant="outlined" sx={{display: 'flex', alignItems: 'center', gap: 1.5, p: 1.5}}>
+            <Avatar
+                variant="rounded"
+                src={job.thumbnail || undefined}
+                sx={{width: 64, height: 64, flex: '0 0 auto', bgcolor: 'action.selected', color: 'text.secondary'}}
+            >
+                {job.mode === 'audio' ? <MusicNoteIcon/> : <PlayArrowIcon/>}
+            </Avatar>
 
-            <div className="job-info">
-                <div className="job-title" title={job.title}>{job.title}</div>
-                <div className="progress-track">
-                    <div
-                        className={'progress-fill' + (indeterminate ? ' indeterminate' : '')}
-                        style={indeterminate ? undefined : {width: `${Math.max(0, Math.min(1, job.progress)) * 100}%`}}
-                    />
-                </div>
-                <div className="job-status">{statusLine(t, job)}</div>
-            </div>
+            <Box sx={{flex: '1 1 auto', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 0.5}}>
+                <Stack direction="row" spacing={1} sx={{alignItems: 'center'}}>
+                    <Typography variant="subtitle2" noWrap title={job.title} sx={{flex: 1, fontWeight: 700}}>
+                        {job.title}
+                    </Typography>
+                    {job.jobState === 'success' && <Chip size="small" color="success" label={t('job.done')}/>}
+                    {job.jobState === 'error' && <Chip size="small" color="error" label={t('app.error')}/>}
+                </Stack>
+                <LinearProgress
+                    variant={indeterminate ? 'indeterminate' : 'determinate'}
+                    value={indeterminate ? undefined : Math.max(0, Math.min(1, job.progress)) * 100}
+                />
+                <Typography variant="caption" color="text.secondary" noWrap>
+                    {statusLine(t, job)}
+                </Typography>
+            </Box>
 
-            <div className="job-actions">
+            <Stack direction="row" spacing={0.5} sx={{flex: '0 0 auto'}}>
                 {job.canOpenFolder && (
-                    <button className="btn-link" onClick={() => OpenOutputFolder(job.jobId)}>
+                    <Button size="small" color="primary" onClick={() => OpenOutputFolder(job.jobId)}>
                         {t('job.openFolder')}
-                    </button>
+                    </Button>
                 )}
                 {job.canCancel && (
-                    <button className="btn-link btn-link-danger" onClick={() => CancelJob(job.jobId)}>
+                    <Button size="small" color="error" onClick={() => CancelJob(job.jobId)}>
                         {t('job.cancel')}
-                    </button>
+                    </Button>
                 )}
                 {job.canRemove && (
-                    <button className="btn-link btn-link-danger" onClick={() => RemoveJob(job.jobId)}>
+                    <Button size="small" color="error" onClick={() => RemoveJob(job.jobId)}>
                         {t('job.remove')}
-                    </button>
+                    </Button>
                 )}
-            </div>
-        </div>
+            </Stack>
+        </Paper>
     )
 }

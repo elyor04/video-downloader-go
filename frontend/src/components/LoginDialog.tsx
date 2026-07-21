@@ -1,5 +1,8 @@
 import {useEffect, useState} from 'react'
 import {useTranslation} from 'react-i18next'
+import Button from '@mui/material/Button'
+import DialogContentText from '@mui/material/DialogContentText'
+import TextField from '@mui/material/TextField'
 import {SkipAuthentication, SubmitLogin} from '../../wailsjs/go/main/App'
 import type {AuthPrompt} from '../types'
 import Modal from './Modal'
@@ -33,29 +36,29 @@ export default function LoginDialog({prompt, onResolved}: Props) {
             title={t('loginDialog.title')}
             actions={
                 <>
-                    <button className="btn" onClick={skip}>{t('loginDialog.skip')}</button>
-                    <button
-                        className="btn btn-primary"
+                    <Button onClick={skip}>{t('loginDialog.skip')}</Button>
+                    <Button
+                        variant="contained"
                         onClick={signIn}
                         disabled={username.length === 0 && password.length === 0}
                     >
                         {t('loginDialog.signIn')}
-                    </button>
+                    </Button>
                 </>
             }
         >
-            <p className="modal-text modal-text-muted">
+            <DialogContentText color="text.secondary" sx={{whiteSpace: 'pre-line'}}>
                 {t('loginDialog.message', {url: prompt.url})}
-            </p>
-            <input
-                className="text-field"
+            </DialogContentText>
+            <TextField
+                size="small"
                 placeholder={t('loginDialog.username') ?? ''}
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 autoFocus
             />
-            <input
-                className="text-field"
+            <TextField
+                size="small"
                 type="password"
                 placeholder={t('loginDialog.password') ?? ''}
                 value={password}
