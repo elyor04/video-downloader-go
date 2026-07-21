@@ -1,0 +1,78 @@
+{
+  "app": {
+    "title": "Video Yuklovchi",
+    "downloads": "Yuklab olishlar",
+    "clearCompleted": "Tugallanganlarni tozalash",
+    "error": "Xato"
+  },
+  "addJobSection": {
+    "urlPlaceholder": "Video yoki pleylist havolasini joylashtiring…",
+    "video": "Video",
+    "audio": "Audio",
+    "fileNamePlaceholder": "Fayl nomi (ixtiyoriy)",
+    "browse": "Ko'rib chiqish…",
+    "download": "Yuklab olish",
+    "selectOutputDirectory": "Saqlash papkasini tanlang",
+    "lookingUpInfo": "Video haqida ma'lumot olinmoqda…",
+    "playlistPreview": "Pleylist: {{title}} ({{count}} ta element)",
+    "couldntLoadInfo": "Ma'lumotni yuklab bo'lmadi: {{error}}"
+  },
+  "queueList": {
+    "empty": "Hali yuklab olishlar yo'q. Boshlash uchun yuqoriga havola joylashtiring."
+  },
+  "job": {
+    "fetching": "Ma'lumot olinmoqda…",
+    "awaitingPlaylistConfirm": "Pleylistni tasdiqlash kutilmoqda…",
+    "awaitingLogin": "Tizimga kirish kutilmoqda…",
+    "awaitingPassword": "Video paroli kutilmoqda…",
+    "queued": "Navbatda",
+    "converting": "Konvertatsiya qilinmoqda…",
+    "downloadingPlaylist": "Yuklanmoqda ({{count}} tadan {{index}}-si) — {{total}} dan {{downloaded}} ({{speed}}, qoldi {{eta}})",
+    "downloading": "{{total}} dan {{downloaded}} ({{speed}}, qoldi {{eta}})",
+    "done": "Tayyor",
+    "error": "Xato: {{message}}",
+    "cancelled": "Bekor qilindi",
+    "openFolder": "Papkani ochish",
+    "cancel": "Bekor qilish",
+    "remove": "O'chirish"
+  },
+  "playlistDialog": {
+    "title": "Pleylist aniqlandi",
+    "withCount": "Bu havola {{count}} ta elementdan iborat pleylist. Barchasini yuklab olasizmi?",
+    "withoutCount": "Bu havola pleylist. Barcha elementlarni yuklab olasizmi?",
+    "yes": "Ha",
+    "no": "Yo'q"
+  },
+  "loginDialog": {
+    "title": "Tizimga kirish talab qilinadi",
+    "message": "Ushbu sayt davom etish uchun hisob talab qiladi:\n{{url}}",
+    "username": "Foydalanuvchi nomi yoki email",
+    "password": "Parol",
+    "skip": "O'tkazib yuborish",
+    "signIn": "Kirish"
+  },
+  "passwordDialog": {
+    "title": "Parol talab qilinadi",
+    "message": "Ushbu video uchun parol talab qilinadi:\n{{url}}",
+    "password": "Parol",
+    "skip": "O'tkazib yuborish",
+    "submit": "Yuborish"
+  },
+  "resolution": {
+    "best": "Eng yaxshi"
+  },
+  "convert": {
+    "original": "asl nusxa"
+  },
+  "error": {
+    "emptyUrl": "Iltimos, video havolasini kiriting.",
+    "notADirectory": "Bu papka emas",
+    "couldNotCreateDirectory": "Papkani yaratib bo'lmadi",
+    "permissionDenied": "Ruxsat berilmagan"
+  },
+  "language": {
+    "en": "English",
+    "ru": "Русский",
+    "uz": "Oʻzbekcha"
+  }
+}

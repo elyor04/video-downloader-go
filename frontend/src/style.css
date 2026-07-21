@@ -1,0 +1,384 @@
+:root {
+    --bg: #121212;
+    --surface: #1a1a1a;
+    --border: #2a2a2a;
+    --border-light: #3a3a3a;
+    --text: #e8e8e8;
+    --text-muted: #a0a0a0;
+    --text-faint: #6e6e6e;
+    --accent: #2196f3;
+    --accent-hover: #42a5f5;
+    --error: #e57373;
+    --control-bg: #1e1e1e;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 14px;
+}
+
+#root {
+    height: 100vh;
+}
+
+.app {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    height: 100vh;
+    padding: 12px;
+    overflow: hidden;
+}
+
+.app-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.app-header h1 {
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+}
+
+.row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.row-end {
+    justify-content: flex-end;
+}
+
+.text-field, .select {
+    height: 34px;
+    padding: 0 10px;
+    border: 1px solid var(--border-light);
+    border-radius: 4px;
+    background: var(--control-bg);
+    color: var(--text);
+    font-size: 14px;
+    outline: none;
+}
+
+.text-field::placeholder {
+    color: var(--text-faint);
+}
+
+.text-field:focus, .select:focus {
+    border-color: var(--accent);
+}
+
+.text-field[readonly] {
+    color: var(--text-muted);
+}
+
+.url-field {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.row > .text-field {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.select {
+    flex: 0 0 auto;
+}
+
+.language-select {
+    flex: 0 0 auto;
+    width: 140px;
+}
+
+.radio {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+    color: var(--text);
+    cursor: pointer;
+}
+
+.radio input[type="radio"] {
+    accent-color: var(--accent);
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+.btn {
+    height: 34px;
+    padding: 0 14px;
+    border: 1px solid var(--border-light);
+    border-radius: 4px;
+    background: var(--control-bg);
+    color: var(--text);
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.btn:hover {
+    border-color: var(--text-muted);
+}
+
+.btn-primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    font-weight: 600;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: var(--accent-hover);
+}
+
+.btn:disabled, .btn-primary:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.btn-link {
+    background: none;
+    border: none;
+    color: var(--accent);
+    cursor: pointer;
+    font-size: 13px;
+    padding: 4px 6px;
+}
+
+.btn-link:hover {
+    color: var(--accent-hover);
+}
+
+.preview-row {
+    font-size: 12px;
+    color: var(--text);
+    opacity: 0.85;
+}
+
+.preview-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.preview-error {
+    color: var(--error);
+}
+
+.preview-thumb {
+    width: 36px;
+    height: 36px;
+    object-fit: cover;
+    border-radius: 3px;
+    flex: 0 0 auto;
+}
+
+.spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--border-light);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    flex: 0 0 auto;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.downloads-header {
+    justify-content: space-between;
+}
+
+.downloads-header h2 {
+    font-size: 14px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.queue-empty {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: var(--text-muted);
+    opacity: 0.7;
+    padding: 0 20%;
+}
+
+.queue-list {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.job-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+}
+
+.job-thumb {
+    width: 64px;
+    height: 64px;
+    flex: 0 0 auto;
+    border-radius: 4px;
+    background: #303030;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.job-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.job-thumb-fallback {
+    font-size: 22px;
+    opacity: 0.6;
+}
+
+.job-info {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.job-title {
+    font-weight: 700;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.job-status {
+    font-size: 12px;
+    color: var(--text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.progress-track {
+    height: 4px;
+    border-radius: 2px;
+    background: var(--border-light);
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.15s ease-out;
+}
+
+.progress-fill.indeterminate {
+    width: 30% !important;
+    animation: indeterminate 1.2s ease-in-out infinite;
+}
+
+@keyframes indeterminate {
+    0% {
+        margin-left: -30%;
+    }
+    100% {
+        margin-left: 100%;
+    }
+}
+
+.job-actions {
+    display: flex;
+    flex: 0 0 auto;
+    gap: 2px;
+}
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+}
+
+.modal-box {
+    width: 320px;
+    max-width: calc(100vw - 40px);
+    padding: 16px;
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    background: var(--surface);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.modal-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.modal-body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.modal-text {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.4;
+    white-space: pre-line;
+}
+
+.modal-text-muted {
+    color: var(--text-muted);
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}

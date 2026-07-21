@@ -1,0 +1,78 @@
+{
+  "app": {
+    "title": "Видео Загрузчик",
+    "downloads": "Загрузки",
+    "clearCompleted": "Очистить завершённые",
+    "error": "Ошибка"
+  },
+  "addJobSection": {
+    "urlPlaceholder": "Вставьте ссылку на видео или плейлист…",
+    "video": "Видео",
+    "audio": "Аудио",
+    "fileNamePlaceholder": "Имя файла (необязательно)",
+    "browse": "Обзор…",
+    "download": "Скачать",
+    "selectOutputDirectory": "Выберите папку для сохранения",
+    "lookingUpInfo": "Получение информации о видео…",
+    "playlistPreview": "Плейлист: {{title}} ({{count}} элементов)",
+    "couldntLoadInfo": "Не удалось загрузить информацию: {{error}}"
+  },
+  "queueList": {
+    "empty": "Пока нет загрузок. Вставьте ссылку выше, чтобы начать."
+  },
+  "job": {
+    "fetching": "Получение информации…",
+    "awaitingPlaylistConfirm": "Ожидание подтверждения плейлиста…",
+    "awaitingLogin": "Ожидание входа в аккаунт…",
+    "awaitingPassword": "Ожидание пароля от видео…",
+    "queued": "В очереди",
+    "converting": "Конвертация…",
+    "downloadingPlaylist": "Загрузка ({{index}} из {{count}}) — {{downloaded}} из {{total}} ({{speed}}, осталось {{eta}})",
+    "downloading": "{{downloaded}} из {{total}} ({{speed}}, осталось {{eta}})",
+    "done": "Готово",
+    "error": "Ошибка: {{message}}",
+    "cancelled": "Отменено",
+    "openFolder": "Открыть папку",
+    "cancel": "Отмена",
+    "remove": "Удалить"
+  },
+  "playlistDialog": {
+    "title": "Обнаружен плейлист",
+    "withCount": "Эта ссылка — плейлист из {{count}} элементов. Скачать их все?",
+    "withoutCount": "Эта ссылка — плейлист. Скачать все элементы?",
+    "yes": "Да",
+    "no": "Нет"
+  },
+  "loginDialog": {
+    "title": "Требуется вход",
+    "message": "Этому сайту требуется аккаунт для продолжения:\n{{url}}",
+    "username": "Имя пользователя или email",
+    "password": "Пароль",
+    "skip": "Пропустить",
+    "signIn": "Войти"
+  },
+  "passwordDialog": {
+    "title": "Требуется пароль",
+    "message": "Для этого видео требуется пароль:\n{{url}}",
+    "password": "Пароль",
+    "skip": "Пропустить",
+    "submit": "Отправить"
+  },
+  "resolution": {
+    "best": "Лучшее"
+  },
+  "convert": {
+    "original": "оригинал"
+  },
+  "error": {
+    "emptyUrl": "Пожалуйста, введите ссылку на видео.",
+    "notADirectory": "Это не папка",
+    "couldNotCreateDirectory": "Не удалось создать папку",
+    "permissionDenied": "Доступ запрещён"
+  },
+  "language": {
+    "en": "English",
+    "ru": "Русский",
+    "uz": "Oʻzbekcha"
+  }
+}

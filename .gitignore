@@ -1,0 +1,33 @@
+# Wails build output
+build/bin
+
+# Frontend (npm/Vite)
+node_modules
+frontend/dist
+
+# auto-generated Go<->TS bindings, regenerated on every `wails dev`/`wails build`
+frontend/wailsjs
+
+# Wails cache file used to detect frontend dependency changes
+frontend/package.json.md5
+
+# External tool binaries fetched by tools/fetchffmpeg and tools/fetchytdlp (100MB+, must not be committed)
+/bin
+
+# Go build artifacts
+*.exe
+*.exe~
+*.test
+*.out
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Env (local secrets/config overrides)
+.env
+.env.local

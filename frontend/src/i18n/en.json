@@ -1,0 +1,78 @@
+{
+  "app": {
+    "title": "Video Downloader",
+    "downloads": "Downloads",
+    "clearCompleted": "Clear Completed",
+    "error": "Error"
+  },
+  "addJobSection": {
+    "urlPlaceholder": "Paste a video or playlist URL…",
+    "video": "Video",
+    "audio": "Audio",
+    "fileNamePlaceholder": "File name (optional)",
+    "browse": "Browse…",
+    "download": "Download",
+    "selectOutputDirectory": "Select Output Directory",
+    "lookingUpInfo": "Looking up video info…",
+    "playlistPreview": "Playlist: {{title}} ({{count}} items)",
+    "couldntLoadInfo": "Couldn't load info: {{error}}"
+  },
+  "queueList": {
+    "empty": "No downloads yet. Paste a URL above to get started."
+  },
+  "job": {
+    "fetching": "Fetching info…",
+    "awaitingPlaylistConfirm": "Waiting for playlist confirmation…",
+    "awaitingLogin": "Waiting for sign-in…",
+    "awaitingPassword": "Waiting for video password…",
+    "queued": "Queued",
+    "converting": "Converting…",
+    "downloadingPlaylist": "Downloading ({{index}} of {{count}}) — {{downloaded}} of {{total}} ({{speed}}, ETA {{eta}})",
+    "downloading": "{{downloaded}} of {{total}} ({{speed}}, ETA {{eta}})",
+    "done": "Done",
+    "error": "Error: {{message}}",
+    "cancelled": "Cancelled",
+    "openFolder": "Open Folder",
+    "cancel": "Cancel",
+    "remove": "Remove"
+  },
+  "playlistDialog": {
+    "title": "Playlist detected",
+    "withCount": "This URL is a playlist with {{count}} items. Download all of them?",
+    "withoutCount": "This URL is a playlist. Download all items?",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "loginDialog": {
+    "title": "Sign in required",
+    "message": "This site requires an account to continue:\n{{url}}",
+    "username": "Username or email",
+    "password": "Password",
+    "skip": "Skip",
+    "signIn": "Sign In"
+  },
+  "passwordDialog": {
+    "title": "Password required",
+    "message": "This video requires a password:\n{{url}}",
+    "password": "Password",
+    "skip": "Skip",
+    "submit": "Submit"
+  },
+  "resolution": {
+    "best": "Best"
+  },
+  "convert": {
+    "original": "original"
+  },
+  "error": {
+    "emptyUrl": "Please enter a video URL.",
+    "notADirectory": "Not a directory",
+    "couldNotCreateDirectory": "Could not create directory",
+    "permissionDenied": "Permission denied"
+  },
+  "language": {
+    "en": "English",
+    "ru": "Русский",
+    "uz": "Oʻzbekcha"
+  }
+}
