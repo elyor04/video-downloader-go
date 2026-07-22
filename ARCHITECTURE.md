@@ -150,6 +150,7 @@ build/
   appicon.png                                 — 1024x1024 source icon Wails derives platform icons from
   darwin/
     Info.plist / Info.dev.plist                — macOS bundle metadata templates (build vs. dev)
+    package.sh                                  — hand-maintained: copies bin/{yt-dlp,ffmpeg,ffprobe} into the built .app, re-signs it, wraps it in a .dmg via create-dmg
   windows/
     icon.ico                                    — Windows executable icon
     info.json                                   — Windows version-info resource template
@@ -686,7 +687,17 @@ Everything the frontend can call, all delegating straight to `Manager`:
     --nsis`) and is explicitly marked "DO NOT EDIT."
 - **macOS**: `Info.plist` (release) / `Info.dev.plist` (dev — adds
   `NSAllowsLocalNetworking` for local dev server access) are Wails template
-  files interpolated with product metadata at build time.
+  files interpolated with product metadata at build time. Unlike Windows,
+  Wails' own macOS packaging (`wails build -platform darwin/universal`)
+  embeds only the Go binary — nothing copies `bin/yt-dlp`/`ffmpeg`/`ffprobe`
+  into the `.app`, so `utils.ResolveBundledPath` would find nothing in a
+  distributed bundle. `build/darwin/package.sh` is the macOS counterpart to
+  `project.nsi`'s explicit `bin/` copy: it copies the three binaries into
+  `Contents/MacOS/bin` (the directory `ResolveBundledPath` checks first,
+  since `os.Executable()` resolves to `Contents/MacOS/video-downloader-go`),
+  re-signs the bundle (adding files after Wails' own signing invalidates the
+  seal — both are ad-hoc, no Developer ID or notarization involved), and
+  packages it into a `.dmg` via `create-dmg`.
 - **Icons**: `build/appicon.png` (1024×1024) is the master source Wails
   derives all platform-specific icons from; `build/windows/icon.ico`
   (6-size multi-res ICO, largest 256×256) is the pre-baked Windows icon.

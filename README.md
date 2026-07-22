@@ -45,3 +45,12 @@ wails build -nsis -installscope user
 ```
 
 The installer always installs into `%LOCALAPPDATA%` rather than `Program Files` — required so the app's own auto-updater can overwrite `bin/yt-dlp.exe`/`ffmpeg.exe`/`ffprobe.exe` in place, which it couldn't do from a `Program Files` install without elevation (see `build/windows/installer/project.nsi`). Passing `-installscope user` just avoids an unnecessary UAC prompt during install and registers uninstall info per-user instead of machine-wide; omitting it no longer breaks anything, it's just not as clean.
+
+To build a universal (Intel + Apple Silicon) macOS app and package it as a `.dmg`:
+
+```
+wails build -platform darwin/universal
+build/darwin/package.sh
+```
+
+`wails build` alone only embeds the Go binary — unlike the Windows installer, nothing copies `bin/yt-dlp`/`ffmpeg`/`ffprobe` into the `.app`, so without the packaging step the bundle can't find them at runtime. `build/darwin/package.sh` copies them into `Contents/MacOS/bin`, re-signs the bundle (ad-hoc, same as Wails' own signing — there's no Developer ID/notarization here, so Gatekeeper will still show an "unidentified developer" warning on first launch), and wraps it into `build/bin/video-downloader-go.dmg` via [`create-dmg`](https://github.com/create-dmg/create-dmg) (`brew install create-dmg`).
