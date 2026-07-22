@@ -59,6 +59,21 @@
     "skip": "Skip",
     "submit": "Submit"
   },
+  "updateDialog": {
+    "ytdlpTitle": "Update available",
+    "ytdlpBody": "A new version of yt-dlp is available ({{current}} → {{latest}}). Update now?",
+    "ytdlpMissingTitle": "yt-dlp not found",
+    "ytdlpMissingBody": "yt-dlp wasn't found. It's required to download videos — download it now?",
+    "ffmpegTitle": "FFmpeg refresh recommended",
+    "ffmpegBody": "It's been a while since FFmpeg was last refreshed. Update to the latest build?",
+    "ffmpegMissingTitle": "FFmpeg not found",
+    "ffmpegMissingBody": "FFmpeg wasn't found. It's required to convert files — download it now?",
+    "update": "Update",
+    "download": "Download",
+    "later": "Later",
+    "updating": "Updating…",
+    "failed": "Update failed: {{error}}"
+  },
   "resolution": {
     "best": "Best"
   },

@@ -12,6 +12,13 @@ import (
 type Settings struct {
 	OutputDir string `json:"outputDir"`
 	Language  string `json:"language"`
+
+	// LastFfmpegRefresh is an RFC3339 timestamp of the last time the
+	// updater re-fetched ffmpeg/ffprobe (see internal/manager/updates.go).
+	// Empty means "never observed" -- treated as "just refreshed" the
+	// first time it's seen, since bin/ was populated fresh by
+	// tools/fetchffmpeg at build/dev time.
+	LastFfmpegRefresh string `json:"lastFfmpegRefresh,omitempty"`
 }
 
 func filePath() (string, error) {

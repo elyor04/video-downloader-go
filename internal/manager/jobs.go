@@ -98,6 +98,7 @@ func (m *Manager) RequestPreview(url string) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	m.previewCancel = cancel
+	ytdlpPath := m.ytdlpPath
 	m.mu.Unlock()
 
 	m.emit("preview:changed", state)
@@ -111,7 +112,7 @@ func (m *Manager) RequestPreview(url string) {
 				m.logPanic("preview fetch", r)
 			}
 		}()
-		result, err := downloader.Fetch(ctx, m.ytdlpPath, url)
+		result, err := downloader.Fetch(ctx, ytdlpPath, url)
 		m.finishPreview(url, result, err)
 	}()
 }
@@ -247,6 +248,7 @@ func (m *Manager) startFetch(j *job.Job) {
 	m.mu.Lock()
 	m.runtimes[j.ID] = &jobRuntime{cancel: cancel}
 	m.fetching[j.ID] = struct{}{}
+	ytdlpPath := m.ytdlpPath
 	m.mu.Unlock()
 
 	go func() {
@@ -255,7 +257,7 @@ func (m *Manager) startFetch(j *job.Job) {
 				m.logPanic("fetch "+j.ID, r)
 			}
 		}()
-		result, err := downloader.Fetch(ctx, m.ytdlpPath, j.URL)
+		result, err := downloader.Fetch(ctx, ytdlpPath, j.URL)
 		m.finishFetch(j.ID, result, err)
 	}()
 }
@@ -358,6 +360,7 @@ func (m *Manager) startDownload(j *job.Job) {
 	m.active[j.ID] = struct{}{}
 	j.SetState(job.StateDownloading)
 	dto := j.ToDTO()
+	ytdlpPath := m.ytdlpPath
 	m.mu.Unlock()
 	m.emit("job:updated", dto)
 
@@ -422,7 +425,7 @@ func (m *Manager) startDownload(j *job.Job) {
 				m.logPanic("download "+j.ID, r)
 			}
 		}()
-		finishedDir, err := downloader.Download(ctx, m.ytdlpPath, params, cb)
+		finishedDir, err := downloader.Download(ctx, ytdlpPath, params, cb)
 		m.finishDownload(j.ID, finishedDir, err)
 	}()
 }

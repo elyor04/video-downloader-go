@@ -59,6 +59,21 @@
     "skip": "O'tkazib yuborish",
     "submit": "Yuborish"
   },
+  "updateDialog": {
+    "ytdlpTitle": "Yangilanish mavjud",
+    "ytdlpBody": "yt-dlp uchun yangi versiya mavjud ({{current}} → {{latest}}). Hozir yangilansinmi?",
+    "ytdlpMissingTitle": "yt-dlp topilmadi",
+    "ytdlpMissingBody": "yt-dlp topilmadi. Video yuklab olish uchun zarur — hozir yuklab olinsinmi?",
+    "ffmpegTitle": "FFmpeg yangilanishi tavsiya etiladi",
+    "ffmpegBody": "FFmpeg uzoq vaqtdan beri yangilanmagan. Eng so'nggi versiyasi yuklab olinsinmi?",
+    "ffmpegMissingTitle": "FFmpeg topilmadi",
+    "ffmpegMissingBody": "FFmpeg topilmadi. Fayllarni konvertatsiya qilish uchun zarur — hozir yuklab olinsinmi?",
+    "update": "Yangilash",
+    "download": "Yuklab olish",
+    "later": "Keyinroq",
+    "updating": "Yangilanmoqda…",
+    "failed": "Yangilab bo'lmadi: {{error}}"
+  },
   "resolution": {
     "best": "Eng yaxshi"
   },

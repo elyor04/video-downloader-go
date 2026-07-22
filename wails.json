@@ -9,5 +9,8 @@
   "author": {
     "name": "Elyor Tukhtamuratov",
     "email": "tuxtamuratovelyor@gmail.com"
+  },
+  "info": {
+    "productName": "Video Downloader"
   }
 }

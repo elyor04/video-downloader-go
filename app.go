@@ -44,3 +44,5 @@ func (a *App) RemoveJob(jobID string)                { a.mgr.RemoveJob(jobID) }
 func (a *App) CancelAll()                            { a.mgr.CancelAll() }
 func (a *App) ClearCompleted()                       { a.mgr.ClearCompleted() }
 func (a *App) OpenOutputFolder(jobID string)         { a.mgr.OpenOutputFolder(jobID) }
+
+func (a *App) ConfirmUpdate(kind string, accept bool) error { return a.mgr.ConfirmUpdate(kind, accept) }

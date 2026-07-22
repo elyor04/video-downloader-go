@@ -29,3 +29,10 @@ export interface AuthPrompt {
     jobId: string
     url: string
 }
+
+export interface UpdatePrompt {
+    kind: 'ytdlp' | 'ffmpeg'
+    missing: boolean // true if not found anywhere (vs. present but outdated)
+    currentVersion: string
+    latestVersion: string // '' for the ffmpeg time-gated/missing cases
+}

@@ -59,6 +59,21 @@
     "skip": "Пропустить",
     "submit": "Отправить"
   },
+  "updateDialog": {
+    "ytdlpTitle": "Доступно обновление",
+    "ytdlpBody": "Доступна новая версия yt-dlp ({{current}} → {{latest}}). Обновить сейчас?",
+    "ytdlpMissingTitle": "yt-dlp не найден",
+    "ytdlpMissingBody": "yt-dlp не найден. Он необходим для загрузки видео — загрузить сейчас?",
+    "ffmpegTitle": "Рекомендуется обновить FFmpeg",
+    "ffmpegBody": "FFmpeg давно не обновлялся. Загрузить актуальную сборку?",
+    "ffmpegMissingTitle": "FFmpeg не найден",
+    "ffmpegMissingBody": "FFmpeg не найден. Он необходим для конвертации файлов — загрузить сейчас?",
+    "update": "Обновить",
+    "download": "Загрузить",
+    "later": "Позже",
+    "updating": "Обновление…",
+    "failed": "Не удалось обновить: {{error}}"
+  },
   "resolution": {
     "best": "Лучшее"
   },

@@ -8,6 +8,7 @@ import type {
     PlaylistPrompt,
     PreviewState,
     ResolutionOption,
+    UpdatePrompt,
 } from '../types'
 
 const idlePreview: PreviewState = {
@@ -35,6 +36,8 @@ export interface BackendState {
     playlistPrompt: PlaylistPrompt | null
     loginPrompt: AuthPrompt | null
     passwordPrompt: AuthPrompt | null
+    ytdlpUpdatePrompt: UpdatePrompt | null
+    ffmpegUpdatePrompt: UpdatePrompt | null
 }
 
 const initialState: BackendState = {
@@ -52,6 +55,8 @@ const initialState: BackendState = {
     playlistPrompt: null,
     loginPrompt: null,
     passwordPrompt: null,
+    ytdlpUpdatePrompt: null,
+    ffmpegUpdatePrompt: null,
 }
 
 // useBackendEvents is the single point of contact with the Go backend: it
@@ -109,6 +114,10 @@ export function useBackendEvents() {
                 setState((s) => ({...s, loginPrompt: p}))),
             EventsOn('password:requested', (p: AuthPrompt) =>
                 setState((s) => ({...s, passwordPrompt: p}))),
+            EventsOn('update:ytdlp-available', (p: UpdatePrompt) =>
+                setState((s) => ({...s, ytdlpUpdatePrompt: p}))),
+            EventsOn('update:ffmpeg-available', (p: UpdatePrompt) =>
+                setState((s) => ({...s, ffmpegUpdatePrompt: p}))),
             EventsOn('prompt:cancelled', (jobId: string) =>
                 setState((s) => ({
                     ...s,
@@ -143,5 +152,7 @@ export function useBackendEvents() {
         dismissPlaylistPrompt: () => setState((s) => ({...s, playlistPrompt: null})),
         dismissLoginPrompt: () => setState((s) => ({...s, loginPrompt: null})),
         dismissPasswordPrompt: () => setState((s) => ({...s, passwordPrompt: null})),
+        dismissYtdlpUpdatePrompt: () => setState((s) => ({...s, ytdlpUpdatePrompt: null})),
+        dismissFfmpegUpdatePrompt: () => setState((s) => ({...s, ffmpegUpdatePrompt: null})),
     }
 }

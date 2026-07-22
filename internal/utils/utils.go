@@ -11,7 +11,7 @@ import (
 
 const MaxResolution = 65535
 
-const MaxConcurrentDownloads = 2
+const MaxConcurrentDownloads = 5
 
 // ResolutionOption is one entry in the resolution ladder. Label is an
 // i18next key the frontend resolves to a translated string; numeric labels
@@ -63,22 +63,58 @@ func FfprobeBinaryName() string {
 	return "ffprobe"
 }
 
-// ResolveBundledPath looks for `name` next to the running executable
-// (packaged-build layout), then under ./bin (the dev-mode layout
-// tools/fetchytdlp and tools/fetchffmpeg populate), returning "" if it's in
-// neither place.
+// ResolveBundledPath looks for `name` in, in order: bin/ next to the
+// running executable (the packaged-build layout -- see
+// build/windows/installer/project.nsi, which installs yt-dlp/ffmpeg/ffprobe
+// into $INSTDIR\bin -- resolved via os.Executable() rather than the
+// process's working directory, so it's reliable regardless of how the app
+// was launched); directly next to the executable (flat-layout fallback);
+// ./bin relative to the working directory (the dev-mode layout
+// tools/fetchytdlp and tools/fetchffmpeg populate, where cwd is the project
+// root); directly under the working directory (flat-layout fallback). No
+// current build of this project produces a flat layout, but the fallbacks
+// are cheap insurance for layouts this function doesn't yet know about
+// (e.g. a future macOS package). Returns "" if it's in none of those
+// places.
 func ResolveBundledPath(name string) string {
 	if exe, err := os.Executable(); err == nil {
-		candidate := filepath.Join(filepath.Dir(exe), name)
-		if _, err := os.Stat(candidate); err == nil {
+		exeDir := filepath.Dir(exe)
+		if candidate := filepath.Join(exeDir, "bin", name); fileExists(candidate) {
+			return candidate
+		}
+		if candidate := filepath.Join(exeDir, name); fileExists(candidate) {
 			return candidate
 		}
 	}
 	if wd, err := os.Getwd(); err == nil {
-		candidate := filepath.Join(wd, "bin", name)
-		if _, err := os.Stat(candidate); err == nil {
+		if candidate := filepath.Join(wd, "bin", name); fileExists(candidate) {
 			return candidate
 		}
+		if candidate := filepath.Join(wd, name); fileExists(candidate) {
+			return candidate
+		}
+	}
+	return ""
+}
+
+func fileExists(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil
+}
+
+// PreferredBinDir returns the bin/ directory a missing bundled binary
+// should be downloaded into: next to the running executable in a packaged
+// build, or under the working directory in dev mode. Mirrors
+// ResolveBundledPath's first two search roots, but doesn't require anything
+// to already exist there -- it's the write-side counterpart used by
+// internal/manager/updates.go when yt-dlp/ffmpeg/ffprobe can't be found
+// anywhere. Returns "" if neither os.Executable() nor os.Getwd() succeed.
+func PreferredBinDir() string {
+	if exe, err := os.Executable(); err == nil {
+		return filepath.Join(filepath.Dir(exe), "bin")
+	}
+	if wd, err := os.Getwd(); err == nil {
+		return filepath.Join(wd, "bin")
 	}
 	return ""
 }

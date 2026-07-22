@@ -60,6 +60,7 @@ func main() {
 					Title: "Select Output Directory",
 				})
 			})
+			mgr.CheckForUpdates()
 		},
 		OnShutdown: func(ctx context.Context) {
 			mgr.Shutdown()

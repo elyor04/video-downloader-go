@@ -1,27 +1,31 @@
-// Command fetchytdlp downloads the pinned yt-dlp release for the current
-// platform into bin/ if it isn't already there. bin/ is gitignored (an
-// 18MB+ binary doesn't belong in the repo), so this replaces committing it:
-// it's wired into wails.json's frontend:install, which runs before every
-// `wails dev`/`wails build`, so a fresh clone fetches it automatically on
-// first build.
+// Command fetchytdlp downloads the latest available yt-dlp release for the
+// current platform into bin/ if it isn't already there. bin/ is gitignored
+// (an 18MB+ binary doesn't belong in the repo), so this replaces committing
+// it: it's wired into wails.json's frontend:install, which runs before
+// every `wails dev`/`wails build`, so a fresh clone fetches it
+// automatically on first build.
 //
-// To bump the pinned version, update ytdlpVersion below and delete the
-// stale bin/ contents (or run: go run ./tools/fetchytdlp -force).
+// There's no pinned version to bump here -- this always asks GitHub what's
+// currently latest, same as the app's own runtime auto-updater
+// (internal/manager/updates.go). To pick up a newer release on an existing
+// checkout, run: go run ./tools/fetchytdlp -force.
+//
+// The actual fetch mechanics live in internal/updater, shared with that
+// runtime auto-updater; this file just owns the CLI's -force/skip-if-present
+// behavior.
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
-	"io"
-	"net/http"
 	"os"
 	"path/filepath"
 	"runtime"
 
+	"video-downloader-go/internal/updater"
 	"video-downloader-go/internal/utils"
 )
-
-const ytdlpVersion = "2026.07.04"
 
 func main() {
 	force := flag.Bool("force", false, "re-download even if the bin/ copy already exists")
@@ -44,45 +48,18 @@ func main() {
 		fail(err)
 	}
 
-	asset, err := releaseAsset()
+	ctx := context.Background()
+	fmt.Println("fetchytdlp: resolving latest yt-dlp release...")
+	version, err := updater.LatestYtdlpVersion(ctx)
 	if err != nil {
 		fail(err)
 	}
 
-	url := fmt.Sprintf("https://github.com/yt-dlp/yt-dlp/releases/download/%s/%s", ytdlpVersion, asset)
-	fmt.Printf("fetchytdlp: downloading %s -> %s\n", url, dest)
-	if err := download(url, dest); err != nil {
+	fmt.Printf("fetchytdlp: downloading yt-dlp %s -> %s\n", version, dest)
+	if err := updater.DownloadYtdlp(ctx, version, dest); err != nil {
 		fail(err)
 	}
 	fmt.Println("fetchytdlp: done")
-}
-
-// releaseAsset maps the current platform to the standalone yt-dlp binary
-// published under that name in yt-dlp's GitHub release assets. Only the
-// platforms this app is packaged for (via build/darwin, build/windows) are
-// covered; anything else fails loudly rather than silently grabbing the
-// wrong executable.
-func releaseAsset() (string, error) {
-	switch runtime.GOOS {
-	case "windows":
-		switch runtime.GOARCH {
-		case "arm64":
-			return "yt-dlp_arm64.exe", nil
-		case "386":
-			return "yt-dlp_x86.exe", nil
-		default:
-			return "yt-dlp.exe", nil
-		}
-	case "darwin":
-		return "yt-dlp_macos", nil // universal2: Intel + Apple Silicon
-	case "linux":
-		if runtime.GOARCH == "arm64" {
-			return "yt-dlp_linux_aarch64", nil
-		}
-		return "yt-dlp_linux", nil
-	default:
-		return "", fmt.Errorf("fetchytdlp: unsupported platform %s/%s", runtime.GOOS, runtime.GOARCH)
-	}
 }
 
 // repoRootDir locates the module root from this source file's own location
@@ -96,43 +73,6 @@ func repoRootDir() (string, error) {
 		return "", fmt.Errorf("fetchytdlp: could not determine source location")
 	}
 	return filepath.Dir(filepath.Dir(filepath.Dir(thisFile))), nil
-}
-
-// download writes to a temp file and renames into place, so an interrupted
-// download never leaves a corrupt yt-dlp binary behind.
-func download(url, dest string) error {
-	resp, err := http.Get(url)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("unexpected status: %s", resp.Status)
-	}
-
-	tmp := dest + ".download"
-	f, err := os.Create(tmp)
-	if err != nil {
-		return err
-	}
-	if _, err := io.Copy(f, resp.Body); err != nil {
-		f.Close()
-		os.Remove(tmp)
-		return err
-	}
-	if err := f.Close(); err != nil {
-		os.Remove(tmp)
-		return err
-	}
-	// GitHub release assets download without the execute bit; exec.Command
-	// on darwin/linux refuses to run a non-executable file.
-	if runtime.GOOS != "windows" {
-		if err := os.Chmod(tmp, 0o755); err != nil {
-			os.Remove(tmp)
-			return err
-		}
-	}
-	return os.Rename(tmp, dest)
 }
 
 func fail(err error) {

@@ -13,6 +13,7 @@ import PasswordDialog from './components/PasswordDialog'
 import PlaylistConfirmDialog from './components/PlaylistConfirmDialog'
 import QueueList from './components/QueueList'
 import TitleBar from './components/TitleBar'
+import UpdateDialog from './components/UpdateDialog'
 import {useBackendEvents} from './hooks/useBackendEvents'
 
 const LANGUAGES: Array<{code: string; labelKey: string}> = [
@@ -29,6 +30,8 @@ export default function App() {
         dismissPlaylistPrompt,
         dismissLoginPrompt,
         dismissPasswordPrompt,
+        dismissYtdlpUpdatePrompt,
+        dismissFfmpegUpdatePrompt,
     } = useBackendEvents()
 
     const changeLanguage = (code: string) => {
@@ -85,6 +88,11 @@ export default function App() {
             {state.passwordPrompt !== null && (
                 <PasswordDialog prompt={state.passwordPrompt} onResolved={dismissPasswordPrompt}/>
             )}
+            {state.ytdlpUpdatePrompt !== null ? (
+                <UpdateDialog prompt={state.ytdlpUpdatePrompt} onResolved={dismissYtdlpUpdatePrompt}/>
+            ) : state.ffmpegUpdatePrompt !== null ? (
+                <UpdateDialog prompt={state.ffmpegUpdatePrompt} onResolved={dismissFfmpegUpdatePrompt}/>
+            ) : null}
         </Box>
     )
 }

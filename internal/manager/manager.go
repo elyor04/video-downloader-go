@@ -50,6 +50,10 @@ type Manager struct {
 	pendingPrompts     []promptRequest
 	currentPromptJobID string
 
+	updateChecker updateChecker
+	ytdlpUpdate   *UpdatePrompt
+	ffmpegUpdate  *UpdatePrompt
+
 	mode       string
 	resolution int
 	convertTo  string
@@ -98,6 +102,7 @@ func New(ytdlpPath string) *Manager {
 		language:      language,
 		previewState:  "idle",
 		windowFocused: true,
+		updateChecker: realUpdateChecker{},
 	}
 }
 

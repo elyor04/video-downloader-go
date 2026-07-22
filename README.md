@@ -24,7 +24,7 @@ Download videos and audio from YouTube, Instagram, TikTok, and other sites — w
 
 ### yt-dlp & FFmpeg
 
-Unlike the original, these aren't installed manually — `wails dev`/`wails build` fetch the pinned yt-dlp and FFmpeg binaries into `bin/` automatically (see `tools/fetchytdlp`, `tools/fetchffmpeg`).
+Unlike the original, these aren't installed manually — `wails dev`/`wails build` fetch the latest yt-dlp and FFmpeg binaries into `bin/` automatically (see `tools/fetchytdlp`, `tools/fetchffmpeg`). The running app also checks for newer versions on every startup and offers to update them in place.
 
 ## Usage
 
@@ -37,3 +37,11 @@ To build a redistributable instead of running in development mode:
 ```
 wails build
 ```
+
+To build the Windows NSIS installer, pass `-installscope user`:
+
+```
+wails build -nsis -installscope user
+```
+
+This installs per-user (no admin/UAC) into `%LOCALAPPDATA%` instead of the default `Program Files`, which the running app can't write to without elevation — required so the app's own auto-updater can overwrite `bin/yt-dlp.exe`/`ffmpeg.exe`/`ffprobe.exe` in place (see `build/windows/installer/project.nsi`).
