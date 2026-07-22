@@ -148,6 +148,7 @@ export function useBackendEvents() {
 
     return {
         state,
+        reportError: (message: string) => setState((s) => ({...s, errorMessage: message})),
         dismissError: () => setState((s) => ({...s, errorMessage: null})),
         dismissPlaylistPrompt: () => setState((s) => ({...s, playlistPrompt: null})),
         dismissLoginPrompt: () => setState((s) => ({...s, loginPrompt: null})),

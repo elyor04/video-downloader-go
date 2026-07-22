@@ -71,8 +71,7 @@
     "update": "Update",
     "download": "Download",
     "later": "Later",
-    "updating": "Updating…",
-    "failed": "Update failed: {{error}}"
+    "updating": "Updating…"
   },
   "resolution": {
     "best": "Best"

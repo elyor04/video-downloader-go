@@ -71,8 +71,7 @@
     "update": "Yangilash",
     "download": "Yuklab olish",
     "later": "Keyinroq",
-    "updating": "Yangilanmoqda…",
-    "failed": "Yangilab bo'lmadi: {{error}}"
+    "updating": "Yangilanmoqda…"
   },
   "resolution": {
     "best": "Eng yaxshi"

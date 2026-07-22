@@ -71,8 +71,7 @@
     "update": "Обновить",
     "download": "Загрузить",
     "later": "Позже",
-    "updating": "Обновление…",
-    "failed": "Не удалось обновить: {{error}}"
+    "updating": "Обновление…"
   },
   "resolution": {
     "best": "Лучшее"

@@ -1,3 +1,4 @@
+import type {ReactNode} from 'react'
 import {useTranslation} from 'react-i18next'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
@@ -26,6 +27,7 @@ export default function App() {
     const {t, i18n} = useTranslation()
     const {
         state,
+        reportError,
         dismissError,
         dismissPlaylistPrompt,
         dismissLoginPrompt,
@@ -37,6 +39,29 @@ export default function App() {
     const changeLanguage = (code: string) => {
         void i18n.changeLanguage(code)
         SetLanguage(code)
+    }
+
+    // Only one modal is ever shown at a time -- state.errorMessage,
+    // playlist/login/password prompts, and the update prompts are all
+    // independent state slices with no shared coordination, so without an
+    // explicit precedence order here two could render stacked (e.g. an
+    // update failure's error dialog on top of a still-pending ffmpeg update
+    // prompt). Live per-job prompts block that job's running download, so
+    // they outrank the app-level update prompts, which in turn outrank the
+    // purely informational error dialog.
+    let modal: ReactNode = null
+    if (state.playlistPrompt !== null) {
+        modal = <PlaylistConfirmDialog prompt={state.playlistPrompt} onResolved={dismissPlaylistPrompt}/>
+    } else if (state.loginPrompt !== null) {
+        modal = <LoginDialog prompt={state.loginPrompt} onResolved={dismissLoginPrompt}/>
+    } else if (state.passwordPrompt !== null) {
+        modal = <PasswordDialog prompt={state.passwordPrompt} onResolved={dismissPasswordPrompt}/>
+    } else if (state.ytdlpUpdatePrompt !== null) {
+        modal = <UpdateDialog prompt={state.ytdlpUpdatePrompt} onResolved={dismissYtdlpUpdatePrompt} onError={reportError}/>
+    } else if (state.ffmpegUpdatePrompt !== null) {
+        modal = <UpdateDialog prompt={state.ffmpegUpdatePrompt} onResolved={dismissFfmpegUpdatePrompt} onError={reportError}/>
+    } else if (state.errorMessage !== null) {
+        modal = <ErrorDialog message={state.errorMessage} onClose={dismissError}/>
     }
 
     return (
@@ -76,23 +101,7 @@ export default function App() {
                 <QueueList jobs={state.jobs}/>
             </Box>
 
-            {state.errorMessage !== null && (
-                <ErrorDialog message={state.errorMessage} onClose={dismissError}/>
-            )}
-            {state.playlistPrompt !== null && (
-                <PlaylistConfirmDialog prompt={state.playlistPrompt} onResolved={dismissPlaylistPrompt}/>
-            )}
-            {state.loginPrompt !== null && (
-                <LoginDialog prompt={state.loginPrompt} onResolved={dismissLoginPrompt}/>
-            )}
-            {state.passwordPrompt !== null && (
-                <PasswordDialog prompt={state.passwordPrompt} onResolved={dismissPasswordPrompt}/>
-            )}
-            {state.ytdlpUpdatePrompt !== null ? (
-                <UpdateDialog prompt={state.ytdlpUpdatePrompt} onResolved={dismissYtdlpUpdatePrompt}/>
-            ) : state.ffmpegUpdatePrompt !== null ? (
-                <UpdateDialog prompt={state.ffmpegUpdatePrompt} onResolved={dismissFfmpegUpdatePrompt}/>
-            ) : null}
+            {modal}
         </Box>
     )
 }

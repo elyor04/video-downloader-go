@@ -10,12 +10,12 @@ import Modal from './Modal'
 interface Props {
     prompt: UpdatePrompt
     onResolved: () => void
+    onError: (message: string) => void
 }
 
-export default function UpdateDialog({prompt, onResolved}: Props) {
+export default function UpdateDialog({prompt, onResolved, onError}: Props) {
     const {t} = useTranslation()
     const [updating, setUpdating] = useState(false)
-    const [error, setError] = useState('')
 
     const decline = () => {
         ConfirmUpdate(prompt.kind, false)
@@ -23,14 +23,14 @@ export default function UpdateDialog({prompt, onResolved}: Props) {
     }
 
     const accept = async () => {
-        setError('')
         setUpdating(true)
         try {
             await ConfirmUpdate(prompt.kind, true)
             onResolved()
         } catch (err) {
             setUpdating(false)
-            setError(String(err))
+            onResolved()
+            onError(String(err))
         }
     }
 
@@ -59,11 +59,6 @@ export default function UpdateDialog({prompt, onResolved}: Props) {
                     latest: prompt.latestVersion,
                 })}
             </DialogContentText>
-            {error !== '' && (
-                <DialogContentText color="error">
-                    {t('updateDialog.failed', {error})}
-                </DialogContentText>
-            )}
         </Modal>
     )
 }

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -100,5 +101,33 @@ func TestInstalledYtdlpVersion(t *testing.T) {
 	}
 	if got != "2026.07.20" {
 		t.Errorf("InstalledYtdlpVersion() = %q, want %q", got, "2026.07.20")
+	}
+}
+
+// TestDownloadAtomicCreatesMissingDestDir guards against a regression of the
+// bug where a fresh install's bin/ directory doesn't exist yet (nothing has
+// ever downloaded into it before): downloadAtomic must create dest's parent
+// directory itself rather than assuming the caller already did, since
+// internal/manager/updates.go's missing-binary flow points dest at
+// utils.PreferredBinDir(), which explicitly documents that it never creates
+// anything.
+func TestDownloadAtomicCreatesMissingDestDir(t *testing.T) {
+	const body = "fake yt-dlp binary contents"
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(body))
+	}))
+	defer srv.Close()
+
+	dest := filepath.Join(t.TempDir(), "nested", "bin", "yt-dlp") // parent dirs don't exist yet
+	if err := downloadAtomic(context.Background(), srv.URL, dest); err != nil {
+		t.Fatalf("downloadAtomic() error = %v, want nil even when dest's parent directory doesn't exist yet", err)
+	}
+
+	got, err := os.ReadFile(dest)
+	if err != nil {
+		t.Fatalf("ReadFile(%s) error = %v", dest, err)
+	}
+	if string(got) != body {
+		t.Errorf("downloaded content = %q, want %q", got, body)
 	}
 }
