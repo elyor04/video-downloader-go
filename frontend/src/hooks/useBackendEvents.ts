@@ -1,4 +1,5 @@
 import {useEffect, useState} from 'react'
+import i18n from '../i18n'
 import {EventsOn} from '../../wailsjs/runtime/runtime'
 import {GetInitialState, SetWindowFocused} from '../../wailsjs/go/main/App'
 import type {
@@ -80,6 +81,13 @@ export function useBackendEvents() {
                 convertOptions: initial.convertOptions,
                 jobs: initial.jobs,
             }))
+            // i18next itself always boots at 'en' (see i18n/index.ts); apply
+            // the persisted language (internal/settings) once the startup
+            // snapshot arrives, so a restart restores the last-picked
+            // language instead of silently resetting to English.
+            if (initial.language && initial.language !== i18n.language) {
+                void i18n.changeLanguage(initial.language)
+            }
         })
 
         const offs = [

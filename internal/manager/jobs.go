@@ -183,7 +183,10 @@ func (m *Manager) clearPreview() {
 func (m *Manager) AddJob(url string) {
 	url = strings.TrimSpace(url)
 	if url == "" {
-		m.emit("error:occurred", "Please enter a video URL.")
+		// "error." prefix marks this as an i18n key rather than final
+		// display text -- see ErrorDialog.tsx, which is the single place
+		// that distinguishes the two and runs keys through t().
+		m.emit("error:occurred", "error.emptyUrl")
 		return
 	}
 
@@ -200,6 +203,10 @@ func (m *Manager) AddJob(url string) {
 	if fname == "" {
 		fname = "%(title)s"
 	}
+	// A custom filename is consumed by exactly one job -- otherwise it
+	// would silently reapply to every subsequent job added afterward,
+	// overwriting/colliding with this one's output.
+	m.fileName = ""
 	j := job.New(url, job.Mode(m.mode), m.resolution, m.convertTo, outputDir, fname)
 
 	reuse := url == m.previewURL && m.previewState == "ready"
@@ -246,6 +253,16 @@ func (m *Manager) AddJob(url string) {
 func (m *Manager) startFetch(j *job.Job) {
 	ctx, cancel := context.WithCancel(context.Background())
 	m.mu.Lock()
+	if _, already := m.fetching[j.ID]; already {
+		// No current caller re-enters startFetch for a job already being
+		// fetched (AddJob only ever calls it once, right after creating a
+		// fresh job ID) -- this guards against a second yt-dlp -J process
+		// racing the first one and finishFetch firing twice for one job,
+		// should a future caller ever do so.
+		m.mu.Unlock()
+		cancel()
+		return
+	}
 	m.runtimes[j.ID] = &jobRuntime{cancel: cancel}
 	m.fetching[j.ID] = struct{}{}
 	ytdlpPath := m.ytdlpPath

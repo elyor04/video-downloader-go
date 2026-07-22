@@ -15,6 +15,7 @@ import (
 	"strconv"
 	"strings"
 
+	"video-downloader-go/internal/procutil"
 	"video-downloader-go/internal/utils"
 )
 
@@ -69,7 +70,7 @@ func RefreshFfmpeg(ctx context.Context, binDir string) (string, error) {
 // internal/manager/updates.go's time-gated ffmpegRefreshInterval instead).
 func InstalledFfmpegVersionLine(ctx context.Context, ffmpegPath string) (string, error) {
 	cmd := exec.CommandContext(ctx, ffmpegPath, "-version")
-	setProcAttrs(cmd)
+	procutil.SetProcAttrs(cmd)
 	out, err := cmd.Output()
 	if err != nil {
 		return "", err
@@ -346,7 +347,7 @@ func extractFromTarXz(archivePath string, want map[string]string) error {
 	defer os.RemoveAll(tmpDir)
 
 	cmd := exec.Command("tar", "-xJf", archivePath, "-C", tmpDir)
-	setProcAttrs(cmd)
+	procutil.SetProcAttrs(cmd)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {

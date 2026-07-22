@@ -3,6 +3,7 @@
     "title": "Video Downloader",
     "downloads": "Downloads",
     "clearCompleted": "Clear Completed",
+    "cancelAll": "Cancel All",
     "error": "Error",
     "ok": "OK"
   },

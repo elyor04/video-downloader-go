@@ -12,6 +12,7 @@ import (
 	"strings"
 	"sync"
 
+	"video-downloader-go/internal/procutil"
 	"video-downloader-go/internal/utils"
 )
 
@@ -96,7 +97,7 @@ func Download(ctx context.Context, ytdlpPath string, params Params, cb Callbacks
 func runAttempt(ctx context.Context, ytdlpPath string, params Params, auth *authState, cb Callbacks) (retry bool, err error) {
 	args := buildArgs(params, auth.creds)
 	cmd := exec.Command(ytdlpPath, args...)
-	setProcAttrs(cmd)
+	procutil.SetProcAttrs(cmd)
 
 	stdoutPipe, err := cmd.StdoutPipe()
 	if err != nil {

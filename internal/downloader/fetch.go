@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"os/exec"
 	"strings"
+
+	"video-downloader-go/internal/procutil"
 )
 
 // FetchResult mirrors the payload run_fetch() put on the event queue in
@@ -42,7 +44,7 @@ func Fetch(ctx context.Context, ytdlpPath, url string) (*FetchResult, error) {
 		"-J",
 		url,
 	)
-	setProcAttrs(cmd)
+	procutil.SetProcAttrs(cmd)
 
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout

@@ -2,17 +2,7 @@
 
 package downloader
 
-import (
-	"os/exec"
-	"syscall"
-)
-
-// setProcAttrs makes the child the leader of its own process group so
-// killTree can take ffmpeg down with it (ffmpeg is spawned by yt-dlp's
-// postprocessors as a grandchild).
-func setProcAttrs(cmd *exec.Cmd) {
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
-}
+import "syscall"
 
 // killTree mirrors utils.terminate_process_tree's POSIX branch: SIGKILL the
 // whole process group. Always a hard kill, matching the Windows side and

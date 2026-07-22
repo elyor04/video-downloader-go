@@ -35,6 +35,7 @@ export default function AddJobSection({state}: {state: BackendState}) {
     const [mode, setLocalMode] = useState<'video' | 'audio'>('video')
     const [resolution, setLocalResolution] = useState(MAX_RESOLUTION)
     const [convertTo, setLocalConvertTo] = useState('original')
+    const [fileName, setLocalFileName] = useState('')
     const debounceRef = useRef<number | undefined>(undefined)
 
     // Mirrors AddJobSection.qml's Timer{interval:600} debounce before the
@@ -81,6 +82,9 @@ export default function AddJobSection({state}: {state: BackendState}) {
         if (!canDownload) return
         AddJob(url)
         setUrl('')
+        // A custom filename applies to exactly this one job -- reset it so
+        // it doesn't silently reapply (and collide) with the next job.
+        setLocalFileName('')
     }
 
     const resolutionLabel = (label: string) => (label === 'resolution.best' ? t('resolution.best') : label)
@@ -175,7 +179,11 @@ export default function AddJobSection({state}: {state: BackendState}) {
                     size="small"
                     sx={{flex: 1}}
                     placeholder={t('addJobSection.fileNamePlaceholder') ?? ''}
-                    onChange={(e) => SetFileName(e.target.value)}
+                    value={fileName}
+                    onChange={(e) => {
+                        setLocalFileName(e.target.value)
+                        SetFileName(e.target.value)
+                    }}
                 />
             </Stack>
 

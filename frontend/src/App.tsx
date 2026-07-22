@@ -6,7 +6,7 @@ import MenuItem from '@mui/material/MenuItem'
 import Select from '@mui/material/Select'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
-import {ClearCompleted, SetLanguage} from '../wailsjs/go/main/App'
+import {CancelAll, ClearCompleted, SetLanguage} from '../wailsjs/go/main/App'
 import AddJobSection from './components/AddJobSection'
 import ErrorDialog from './components/ErrorDialog'
 import LoginDialog from './components/LoginDialog'
@@ -40,6 +40,8 @@ export default function App() {
         void i18n.changeLanguage(code)
         SetLanguage(code)
     }
+
+    const hasCancellableJobs = state.jobs.some((j) => j.canCancel)
 
     // Only one modal is ever shown at a time -- state.errorMessage,
     // playlist/login/password prompts, and the update prompts are all
@@ -93,9 +95,14 @@ export default function App() {
                     <Typography variant="subtitle1" sx={{fontWeight: 700}}>
                         {t('app.downloads')}
                     </Typography>
-                    <Button size="small" onClick={() => ClearCompleted()}>
-                        {t('app.clearCompleted')}
-                    </Button>
+                    <Stack direction="row" spacing={1}>
+                        <Button size="small" color="error" disabled={!hasCancellableJobs} onClick={() => CancelAll()}>
+                            {t('app.cancelAll')}
+                        </Button>
+                        <Button size="small" onClick={() => ClearCompleted()}>
+                            {t('app.clearCompleted')}
+                        </Button>
+                    </Stack>
                 </Stack>
 
                 <QueueList jobs={state.jobs}/>

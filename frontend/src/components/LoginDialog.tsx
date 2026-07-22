@@ -22,11 +22,14 @@ export default function LoginDialog({prompt, onResolved}: Props) {
         setPassword('')
     }, [prompt.jobId])
 
+    const canSignIn = username.length > 0 || password.length > 0
+
     const skip = () => {
         SkipAuthentication(prompt.jobId)
         onResolved()
     }
     const signIn = () => {
+        if (!canSignIn) return
         SubmitLogin(prompt.jobId, username, password)
         onResolved()
     }
@@ -37,11 +40,7 @@ export default function LoginDialog({prompt, onResolved}: Props) {
             actions={
                 <>
                     <Button onClick={skip}>{t('loginDialog.skip')}</Button>
-                    <Button
-                        variant="contained"
-                        onClick={signIn}
-                        disabled={username.length === 0 && password.length === 0}
-                    >
+                    <Button variant="contained" onClick={signIn} disabled={!canSignIn}>
                         {t('loginDialog.signIn')}
                     </Button>
                 </>
@@ -55,6 +54,9 @@ export default function LoginDialog({prompt, onResolved}: Props) {
                 placeholder={t('loginDialog.username') ?? ''}
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter') signIn()
+                }}
                 autoFocus
             />
             <TextField
@@ -63,6 +65,9 @@ export default function LoginDialog({prompt, onResolved}: Props) {
                 placeholder={t('loginDialog.password') ?? ''}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter') signIn()
+                }}
             />
         </Modal>
     )

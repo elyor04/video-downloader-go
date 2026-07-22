@@ -57,9 +57,13 @@ export default function TitleBar() {
                 style={dragRegion}
                 sx={{height: TITLE_BAR_HEIGHT, minHeight: `${TITLE_BAR_HEIGHT}px !important`, pl: 1.5}}
             >
-                <Box component="img" src={appIcon} alt="" sx={{width: 16, height: 16, mr: 1}} style={noDragRegion}/>
-                <Typography variant="body2" sx={{fontWeight: 600, flex: 1}}>
-                    {t('app.title')}
+                <Box component="img" src={appIcon} alt="" sx={{width: 18, height: 18, mr: 1}} style={noDragRegion}/>
+                {/* App name, not the translated in-content heading (App.tsx's
+                    own t('app.title')) -- a native window title bar would
+                    show the product name untranslated too, so this one stays
+                    literal rather than following the UI language. */}
+                <Typography variant="body2" sx={{fontWeight: 600, fontSize: 13, flex: 1}}>
+                    Video Downloader
                 </Typography>
 
                 <Box sx={{display: 'flex', height: '100%'}} style={noDragRegion}>

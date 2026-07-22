@@ -17,6 +17,8 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"video-downloader-go/internal/procutil"
 )
 
 // YtdlpAssetName maps the current platform to the standalone yt-dlp binary
@@ -95,7 +97,7 @@ func LatestYtdlpVersion(ctx context.Context) (string, error) {
 // -- the user (or a previous update) may have replaced it independently.
 func InstalledYtdlpVersion(ctx context.Context, ytdlpPath string) (string, error) {
 	cmd := exec.CommandContext(ctx, ytdlpPath, "--version")
-	setProcAttrs(cmd)
+	procutil.SetProcAttrs(cmd)
 	out, err := cmd.Output()
 	if err != nil {
 		return "", err

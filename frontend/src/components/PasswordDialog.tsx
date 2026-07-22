@@ -25,6 +25,7 @@ export default function PasswordDialog({prompt, onResolved}: Props) {
         onResolved()
     }
     const submit = () => {
+        if (password.length === 0) return
         SubmitPassword(prompt.jobId, password)
         onResolved()
     }
@@ -50,6 +51,9 @@ export default function PasswordDialog({prompt, onResolved}: Props) {
                 placeholder={t('passwordDialog.password') ?? ''}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter') submit()
+                }}
                 autoFocus
             />
         </Modal>
