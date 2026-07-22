@@ -2,8 +2,9 @@
 set -euo pipefail
 
 # Packages build/bin/video-downloader-go.app (produced by
-# `wails build -platform darwin/universal`) into a distributable
-# build/bin/video-downloader-go.dmg.
+# `wails build -platform darwin/universal`) into build/bin/video-downloader-go.dmg,
+# renaming the bundle to "Video Downloader.app" along the way (Wails names the
+# built bundle after wails.json's "name" field, not info.productName).
 #
 # Wails' own packaging only ever embeds the Go binary itself -- unlike
 # build/windows/installer/project.nsi, nothing here copies
@@ -13,11 +14,12 @@ set -euo pipefail
 # that copy, the macOS equivalent of project.nsi's explicit bin/ copy.
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-APP="$REPO_ROOT/build/bin/video-downloader-go.app"
+BUILT_APP="$REPO_ROOT/build/bin/video-downloader-go.app"
+APP="$REPO_ROOT/build/bin/Video Downloader.app"
 DMG="$REPO_ROOT/build/bin/video-downloader-go.dmg"
 
-if [ ! -d "$APP" ]; then
-  echo "error: $APP not found -- run 'wails build -platform darwin/universal' first" >&2
+if [ ! -d "$BUILT_APP" ]; then
+  echo "error: $BUILT_APP not found -- run 'wails build -platform darwin/universal' first" >&2
   exit 1
 fi
 
@@ -25,6 +27,13 @@ if ! command -v create-dmg >/dev/null 2>&1; then
   echo "error: create-dmg not found -- install it with 'brew install create-dmg'" >&2
   exit 1
 fi
+
+# Wails names the bundle after wails.json's top-level "name" ("video-downloader-go"),
+# not info.productName -- rename it to the product name Finder/Dock should show.
+# This is a plain directory rename, so it does not disturb Wails' ad-hoc signature;
+# the bundle is re-signed below anyway once the bin/ helpers are added.
+rm -rf "$APP"
+mv "$BUILT_APP" "$APP"
 
 BIN_DIR="$APP/Contents/MacOS/bin"
 mkdir -p "$BIN_DIR"
@@ -47,8 +56,8 @@ create-dmg \
   --volname "Video Downloader" \
   --window-size 660 400 \
   --icon-size 128 \
-  --icon "video-downloader-go.app" 180 170 \
-  --hide-extension "video-downloader-go.app" \
+  --icon "Video Downloader.app" 180 170 \
+  --hide-extension "Video Downloader.app" \
   --app-drop-link 480 170 \
   "$DMG" \
   "$APP"
