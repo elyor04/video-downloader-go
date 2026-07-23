@@ -35,8 +35,9 @@ any other site [yt-dlp](https://github.com/yt-dlp/yt-dlp) supports:
 - Sign-in / video-password support for gated content, surfaced as modal
   prompts serialized one-at-a-time across all jobs.
 - Each download is its own OS subprocess (`yt-dlp`), so one job's crash never
-  touches another job or the app; cancelling kills the whole process tree
-  immediately (yt-dlp + any ffmpeg it spawned).
+  touches another job or the app; cancelling asks the whole process tree
+  (yt-dlp + any ffmpeg it spawned) to stop right away, hard-killing it a few
+  seconds later if it doesn't.
 - Native OS notification on finish while the window is unfocused.
 - Remembers output directory + UI language across restarts.
 - UI in English, Russian, Uzbek, switchable live.
@@ -79,7 +80,8 @@ internal/
   downloader/
     download.go                             — builds yt-dlp args, runs/retries a download, parses progress
     fetch.go                                 — runs yt-dlp -J for URL preview / pre-queue metadata
-    process_unix.go / process_windows.go     — per-OS killTree implementation (SetProcAttrs itself now lives in internal/procutil)
+    process_unix.go / process_windows.go     — per-OS killTree (hard kill) + cancelTree (soft-then-hard) implementations (SetProcAttrs itself now lives in internal/procutil)
+    cleanup.go / cleanup_test.go              — removes a cancelled download's leftover part/intermediate/corrupt files, tracked precisely from yt-dlp's own output rather than by globbing the output directory
 
   job/
     job.go                                   — Job struct, state machine (validTransitions), DTO for the frontend
@@ -271,8 +273,8 @@ one goroutine rather than crashing the app.
 Two entry points, both spawning `yt-dlp` as a subprocess with per-OS process
 group attributes (`internal/procutil.SetProcAttrs`, shared with
 `internal/updater` — see §5.7) so the whole tree (yt-dlp + any child ffmpeg)
-can be force-killed together on cancel (`killTree`, still local to this
-package since `internal/updater` never needs to force-kill anything).
+can be killed together on cancel (`killTree`/`cancelTree`, still local to
+this package since `internal/updater` never needs to kill anything).
 
 - **`Fetch(ctx, ytdlpPath, url)`** — runs `yt-dlp --flat-playlist -J <url>`,
   parses the JSON dump into a `FetchResult` (title, thumbnail, is-playlist,
@@ -295,8 +297,58 @@ package since `internal/updater` never needs to force-kill anything).
     **retried once** with `--username`/`--password` or `--video-password`
     appended (`authState` persists across the retry so only one prompt is
     ever shown per job).
-  - Cancellation always goes straight to `killTree` — no cooperative
-    signal/watchdog, matching the "cancel must be immediate" requirement.
+  - Cancellation is soft-then-hard: `runAttempt`'s `ctx.Done()` branch
+    calls `cancelTree`, which asks the whole process group to stop nicely
+    first — `SIGINT` on POSIX, a `CTRL_BREAK_EVENT` scoped to the child's
+    own console process group on Windows (`Process.Signal(os.Interrupt)`,
+    which Go maps to `GenerateConsoleCtrlEvent`). On POSIX this is
+    well-established ffmpeg/yt-dlp behavior: both treat `SIGINT` as their
+    normal graceful-stop signal and yt-dlp's Python runtime turns it into a
+    `KeyboardInterrupt`, so a cooperative process finishes writing a valid
+    output file instead of leaving a truncated one. On Windows, yt-dlp
+    still gets an equivalent `KeyboardInterrupt`, but a live test against
+    the bundled `ffmpeg.exe` (mid-encode, `CTRL_BREAK` sent, several
+    presets tried) showed it exiting within ~300ms every time while still
+    leaving a `moov atom not found` file — indistinguishable from an
+    immediate hard kill. The step is kept on Windows anyway (cheap, still
+    helps yt-dlp's own shutdown, never makes things worse), but its file-
+    integrity benefit there is unconfirmed. Either way, if the tree hasn't
+    exited within `cancelGracePeriod` (2s), it's escalated to `killTree`'s
+    unconditional hard kill. The one exception is app shutdown:
+    `internal/manager.Shutdown` cancels each job's context with
+    `ErrShutdown` as its cause (`context.CancelCauseFunc`/
+    `context.Cause`), which `runAttempt` recognizes and routes straight to
+    `killTree` — with the app exiting, nothing is left to wait out a grace
+    period for, and doing so anyway would risk an orphaned yt-dlp/ffmpeg
+    process outliving the window.
+  - A cancelled download's leftovers get cleaned up (`cleanup.go`), unless
+    yt-dlp still reports success (`cmd.ProcessState.Success()`) despite the
+    cancel signal — a small/fast job can legitimately finish before
+    `cancelTree`'s soft-kill has any effect, and that file must survive.
+    Otherwise, `runAttempt` removes: the raw per-format download(s) (yt-dlp
+    leaves a `.part` file mid-stream, matching `utils.terminate_process_tree`'s
+    resumable-by-design behavior — except this app has no resume/pause
+    state, so after a real cancel it's just clutter); the merged-or-single
+    source file if a convert/recode was requested but didn't finish (yt-dlp
+    only deletes it *after* a successful recode, so an interrupted one
+    survives as an orphan); and the recode/extract target itself, which a
+    live test against the bundled ffmpeg/yt-dlp showed can range from a
+    few-byte stub (`moov atom not found`) to, for WAV specifically, a
+    *valid but truncated* file (WAV's simple streaming header tolerates a
+    size mismatch, unlike MP4/MKV/MP3) — so cleanup never uses "does
+    ffprobe accept this file" as its trigger, only "did this job finish."
+    The tricky part is naming the right file precisely rather than
+    globbing the output directory: yt-dlp's own stdout lines
+    (`[download] Destination: ...`, `Deleting original file ...`) can
+    silently mangle a title containing characters illegal in a Windows
+    filename (verified live: a title with `|` came out as yt-dlp's real,
+    correctly-sanitized `｜` substitute on disk, but as two plain spaces —
+    the `|` dropped entirely — in the same line's stdout rendering, a
+    yt-dlp console-encoding quirk, not something `PYTHONIOENCODING` fixes).
+    So the byte-accurate base filename instead comes from
+    `--print-to-file "before_dl:%(filename)s"` (writing straight to a file
+    sidesteps that console-encoding path), while only the *suffix*
+    (format id + extension — always plain ASCII) is taken from stdout.
   - Returns `ErrCancelled` on cancellation, or a cleaned-up single-line
     error message (last non-empty stderr line, `ERROR: ` prefix stripped)
     on failure.
@@ -729,6 +781,17 @@ real network/filesystem/subprocess access via fakes or `httptest`:
   `UPDATER_TEST_HELPER` env var).
 - **`internal/utils`**: byte/speed/ETA formatting edge cases, download-
   directory validation (missing/creatable/not-a-directory/unwritable).
+- **`internal/downloader`** (`cleanup_test.go`): pure string/file-plumbing
+  coverage for the cancel-cleanup logic — parsing yt-dlp's stdout lines
+  into tracked suffixes (including the "Deleting original file" removal
+  and unrecognized-line no-op cases), splitting a `--print-to-file`
+  destination-log's last line into base/extension, and `cleanupTracker.
+  cleanup` actually removing raw/merge/recode candidates on a real
+  filesystem while leaving an unrelated file alone. No network/subprocess
+  access — real yt-dlp/ffmpeg behavior (the console-encoding mangling,
+  what each cancellation scenario leaves behind) was instead verified via
+  a throwaway harness against the bundled binaries and real URLs, run by
+  hand and deleted rather than kept as a committed test.
 
 No frontend test files are present in the repository.
 
@@ -743,11 +806,24 @@ No frontend test files are present in the repository.
 - **Every background goroutine is `recover()`-guarded** (`m.logPanic`) —
   a stray panic (e.g. an invalid job-state transition slipping through)
   logs and drops only that goroutine instead of crashing the whole app.
-- **Cancellation is always a hard kill.** There is no cooperative/graceful
-  cancellation path anywhere in the download pipeline — `context.Context`
-  cancellation is used purely as the trigger for an immediate
-  `killTree()`, on both Windows (`taskkill /F /T`) and POSIX
-  (`SIGKILL` the process group).
+- **Cancellation is soft-then-hard, except on app shutdown.** A user
+  cancelling a job (`CancelJob`/`CancelAll`) triggers `cancelTree`: the
+  whole process group is asked to stop nicely first (`SIGINT` on POSIX,
+  `CTRL_BREAK_EVENT` on Windows), giving yt-dlp/ffmpeg up to
+  `cancelGracePeriod` (2s) to exit on their own before an unconditional
+  `killTree` (`taskkill /F /T` / `SIGKILL` the process group) finishes the
+  job. The soft step reliably gets a finalized, valid output file on POSIX
+  (both yt-dlp and ffmpeg treat `SIGINT` as their normal graceful-stop
+  signal); on Windows it's confirmed to still let yt-dlp's own Python
+  runtime unwind via `KeyboardInterrupt`, but a live test against the
+  bundled ffmpeg showed it does *not* reliably finalize the output file
+  there (see §5.2) — it's kept anyway since it's cheap and never worse
+  than a hard kill. `internal/manager.Shutdown` is the one caller that
+  skips the grace period entirely — it cancels with `ErrShutdown` as the
+  context's cancellation cause specifically so `runAttempt` routes
+  straight to `killTree`, since the app exiting leaves nothing around to
+  wait out a multi-second grace period and doing so would risk an
+  orphaned subprocess outliving the window.
 - **Credential prompts block a goroutine, not the UI thread.** The
   stderr-scanning goroutine inside `downloader.Download` calls
   `RequestLogin`/`RequestPassword`, which blocks on a per-job buffered

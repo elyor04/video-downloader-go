@@ -6,17 +6,34 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"sync"
+	"time"
 
 	"video-downloader-go/internal/procutil"
 	"video-downloader-go/internal/utils"
 )
 
 var ErrCancelled = errors.New("cancelled")
+
+// ErrShutdown is the cancellation cause internal/manager.Shutdown passes to
+// a job's context (via context.CancelCauseFunc) to mean "the whole app is
+// exiting", as opposed to an ordinary user cancel. runAttempt checks
+// context.Cause(ctx) for this and skips straight to killTree instead of
+// cancelTree's graceful wait: once the app is gone there's no one left to
+// observe a multi-second grace period, and waiting one out here would risk
+// an orphaned yt-dlp/ffmpeg process outliving the window entirely.
+var ErrShutdown = errors.New("app shutdown")
+
+// cancelGracePeriod is how long a user-initiated cancel (CancelJob/
+// CancelAll) waits for yt-dlp/ffmpeg to exit on their own after being asked
+// nicely -- see cancelTree in process_unix.go/process_windows.go -- before
+// escalating to killTree's unconditional hard kill.
+const cancelGracePeriod = 2 * time.Second
 
 // signinRe mirrors worker_process.py's _SIGNIN_RE.
 var signinRe = regexp.MustCompile(`\b[Ss]ign in\b|--username`)
@@ -96,6 +113,20 @@ func Download(ctx context.Context, ytdlpPath string, params Params, cb Callbacks
 
 func runAttempt(ctx context.Context, ytdlpPath string, params Params, auth *authState, cb Callbacks) (retry bool, err error) {
 	args := buildArgs(params, auth.creds)
+
+	// destFile collects yt-dlp's own byte-accurate report of each video's
+	// destination filename (see cleanupTracker's doc comment for why this
+	// can't just be parsed from stdout for titles with characters illegal
+	// in a Windows filename). --print-to-file implies --simulate unless
+	// told otherwise, hence --no-simulate right alongside it.
+	destFile, err := os.CreateTemp("", "video-downloader-dest-*.txt")
+	if err != nil {
+		return false, err
+	}
+	destFile.Close()
+	defer os.Remove(destFile.Name())
+	args = append(args, "--print-to-file", "before_dl:%(filename)s", destFile.Name(), "--no-simulate")
+
 	cmd := exec.Command(ytdlpPath, args...)
 	procutil.SetProcAttrs(cmd)
 
@@ -115,13 +146,16 @@ func runAttempt(ctx context.Context, ytdlpPath string, params Params, auth *auth
 	var stderrLines []string
 	retrySignal := false
 
+	var leftovers cleanupTracker
 	stdoutDone := make(chan struct{})
 	go func() {
 		defer close(stdoutDone)
 		scanner := bufio.NewScanner(stdoutPipe)
 		scanner.Buffer(make([]byte, 64*1024), 1<<20)
 		for scanner.Scan() {
-			handleStdoutLine(scanner.Text(), cb)
+			line := scanner.Text()
+			handleStdoutLine(line, cb)
+			trackCleanupCandidate(&leftovers, line)
 		}
 	}()
 
@@ -170,10 +204,24 @@ func runAttempt(ctx context.Context, ytdlpPath string, params Params, auth *auth
 	var runErr error
 	select {
 	case <-ctx.Done():
-		killTree(cmd.Process.Pid)
-		<-waitErr
+		if errors.Is(context.Cause(ctx), ErrShutdown) {
+			killTree(cmd.Process.Pid)
+			<-waitErr
+		} else {
+			cancelTree(cmd, waitErr, cancelGracePeriod)
+		}
 		<-stdoutDone
 		<-stderrDone
+		// A small/fast job can still exit 0 despite the cancel signal --
+		// cancelTree's soft-kill step only asks it to stop, it doesn't
+		// force an abort, so a job that was seconds from finishing anyway
+		// can complete normally before the signal has any effect. When
+		// that happens, trust yt-dlp's own success and leave its output
+		// alone rather than deleting a finished download just because the
+		// cancel and the natural finish landed at nearly the same moment.
+		if cmd.ProcessState == nil || !cmd.ProcessState.Success() {
+			leftovers.cleanup(destFile.Name(), params.ConvertTo)
+		}
 		return false, ErrCancelled
 	case runErr = <-waitErr:
 		<-stdoutDone

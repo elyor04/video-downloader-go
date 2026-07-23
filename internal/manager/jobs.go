@@ -251,7 +251,11 @@ func (m *Manager) AddJob(url string) {
 }
 
 func (m *Manager) startFetch(j *job.Job) {
-	ctx, cancel := context.WithCancel(context.Background())
+	// CancelCauseFunc for consistency with startDownload's jobRuntime (same
+	// field, same type) -- Fetch itself never inspects the cause, since its
+	// exec.CommandContext-driven cancellation is already an immediate kill
+	// of a single short-lived metadata lookup, graceful or not.
+	ctx, cancel := context.WithCancelCause(context.Background())
 	m.mu.Lock()
 	if _, already := m.fetching[j.ID]; already {
 		// No current caller re-enters startFetch for a job already being
@@ -260,7 +264,7 @@ func (m *Manager) startFetch(j *job.Job) {
 		// racing the first one and finishFetch firing twice for one job,
 		// should a future caller ever do so.
 		m.mu.Unlock()
-		cancel()
+		cancel(nil)
 		return
 	}
 	m.runtimes[j.ID] = &jobRuntime{cancel: cancel}
@@ -371,7 +375,11 @@ func applyProgress(j *job.Job, ev downloader.ProgressEvent) {
 const progressEmitInterval = 80 * time.Millisecond
 
 func (m *Manager) startDownload(j *job.Job) {
-	ctx, cancel := context.WithCancel(context.Background())
+	// CancelCauseFunc: CancelJob/CancelAll cancel with a nil cause (a plain
+	// user cancel, downloader.runAttempt's graceful cancelTree path), while
+	// Manager.Shutdown cancels with downloader.ErrShutdown (skip straight
+	// to killTree) -- see the comment on Shutdown.
+	ctx, cancel := context.WithCancelCause(context.Background())
 	m.mu.Lock()
 	m.runtimes[j.ID] = &jobRuntime{cancel: cancel, answerCh: make(chan credentialAnswer, 1)}
 	m.active[j.ID] = struct{}{}
@@ -498,13 +506,17 @@ func (m *Manager) CancelJob(jobID string) {
 	m.dismissPromptsFor(jobID)
 
 	if rt != nil {
-		// A process is running (fetch or download); cancelling ctx makes
-		// killTree fire immediately inside downloader.Fetch/Download, which
-		// reports back through finishFetch/finishDownload. No watchdog is
-		// needed here — unlike the Python design, cancellation always goes
-		// straight to a hard process-tree kill, never a cooperative signal
-		// that might not be checked promptly.
-		rt.cancel()
+		// A process is running (fetch or download); cancelling ctx (with a
+		// nil cause, meaning "ordinary user cancel" as opposed to
+		// Manager.Shutdown's downloader.ErrShutdown) makes
+		// downloader.Fetch/Download react inside downloader.runAttempt,
+		// which reports back through finishFetch/finishDownload. Fetch's
+		// own exec.CommandContext cancellation is always an immediate kill
+		// (a short-lived metadata lookup, nothing to gracefully wind down);
+		// Download's runAttempt asks yt-dlp/ffmpeg to stop nicely first
+		// (cancelTree) and only escalates to a hard process-tree kill
+		// (killTree) if they don't exit within a few seconds.
+		rt.cancel(nil)
 		return
 	}
 

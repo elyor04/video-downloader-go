@@ -12,13 +12,14 @@ import (
 	"strings"
 	"sync"
 
+	"video-downloader-go/internal/downloader"
 	"video-downloader-go/internal/job"
 	"video-downloader-go/internal/settings"
 	"video-downloader-go/internal/utils"
 )
 
 type jobRuntime struct {
-	cancel   context.CancelFunc
+	cancel   context.CancelCauseFunc
 	answerCh chan credentialAnswer // buffered 1; used by login/password/skip submission
 }
 
@@ -293,12 +294,16 @@ func (m *Manager) SetWindowFocused(focused bool) {
 	m.mu.Unlock()
 }
 
-// Shutdown mirrors requestShutdown: cancel every in-flight job so its
-// process tree is killed immediately, then give the OS a brief moment to
-// finish tearing them down before Wails exits the app.
+// Shutdown mirrors requestShutdown: cancel every in-flight job with
+// downloader.ErrShutdown as the cancellation cause. That's what tells
+// runAttempt's ctx.Done() branch to skip the graceful soft-kill step a
+// plain CancelJob gets and go straight to killTree -- the app is exiting,
+// so there's nothing left to wait out a multi-second grace period for, and
+// doing so anyway would risk an orphaned yt-dlp/ffmpeg process outliving
+// the window.
 func (m *Manager) Shutdown() {
 	m.mu.Lock()
-	cancels := make([]context.CancelFunc, 0, len(m.runtimes))
+	cancels := make([]context.CancelCauseFunc, 0, len(m.runtimes))
 	for _, rt := range m.runtimes {
 		if rt.cancel != nil {
 			cancels = append(cancels, rt.cancel)
@@ -307,7 +312,7 @@ func (m *Manager) Shutdown() {
 	m.mu.Unlock()
 
 	for _, cancel := range cancels {
-		cancel()
+		cancel(downloader.ErrShutdown)
 	}
 }
 
