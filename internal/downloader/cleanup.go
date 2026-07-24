@@ -80,11 +80,32 @@ func trackCleanupCandidate(tracker *cleanupTracker, line string) {
 	}
 }
 
+// fileRef is one "before_dl" line's destination, split into its
+// extension-stripped base and bare extension -- see readAllDestBaseAndExt.
+type fileRef struct {
+	Base, Ext string
+}
+
+// parseDestLine splits one `--print-to-file "before_dl:%(filename)s"` line
+// into its extension-stripped base and bare extension (e.g.
+// base=`C:\out\Title`, ext=`webm`). ok=false for a blank line or one with no
+// extension separator.
+func parseDestLine(line string) (base, ext string, ok bool) {
+	line = strings.TrimSpace(line)
+	if line == "" {
+		return "", "", false
+	}
+	dot := strings.LastIndexByte(line, '.')
+	if dot < 0 {
+		return "", "", false
+	}
+	return line[:dot], line[dot+1:], true
+}
+
 // readLastDestBaseAndExt reads the file `--print-to-file
 // "before_dl:%(filename)s"` was told to append to and returns the last
-// line's path split into its extension-stripped base and bare extension
-// (e.g. base=`C:\out\Title`, ext=`webm`). "before_dl" fires once per video
-// -- once per playlist item, in strict sequence -- so the *last* line is
+// line's path split via parseDestLine. "before_dl" fires once per video --
+// once per playlist item, in strict sequence -- so the *last* line is
 // always the item that was still in flight when the job was cancelled;
 // every earlier item must have already finished (including its own
 // merge/recode) before yt-dlp could move on and log the next one. Returns
@@ -96,15 +117,27 @@ func readLastDestBaseAndExt(path string) (base, ext string, ok bool) {
 		return "", "", false
 	}
 	lines := strings.Split(strings.TrimRight(string(data), "\r\n"), "\n")
-	last := strings.TrimSpace(lines[len(lines)-1])
-	if last == "" {
-		return "", "", false
+	return parseDestLine(lines[len(lines)-1])
+}
+
+// readAllDestBaseAndExt is readLastDestBaseAndExt's multi-item counterpart,
+// used by convert.go: a playlist download appends one "before_dl" line per
+// item, in order, and every downloaded item needs converting -- not just
+// the last/in-flight one cleanup cares about. Blank or malformed lines are
+// skipped rather than aborting the whole read; ok=false only when the file
+// itself can't be read.
+func readAllDestBaseAndExt(path string) (refs []fileRef, ok bool) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, false
 	}
-	dot := strings.LastIndexByte(last, '.')
-	if dot < 0 {
-		return "", "", false
+	lines := strings.Split(strings.TrimRight(string(data), "\r\n"), "\n")
+	for _, line := range lines {
+		if base, ext, lineOk := parseDestLine(line); lineOk {
+			refs = append(refs, fileRef{Base: base, Ext: ext})
+		}
 	}
-	return last[:dot], last[dot+1:], true
+	return refs, true
 }
 
 // cleanup removes every remaining raw per-format candidate (base+suffix,

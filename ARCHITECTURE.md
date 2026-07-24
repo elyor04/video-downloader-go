@@ -82,6 +82,7 @@ internal/
     fetch.go                                 — runs yt-dlp -J for URL preview / pre-queue metadata
     process_unix.go / process_windows.go     — per-OS killTree (hard kill) + cancelTree (soft-then-hard) implementations (SetProcAttrs itself now lives in internal/procutil)
     cleanup.go / cleanup_test.go              — removes a cancelled download's leftover part/intermediate/corrupt files, tracked precisely from yt-dlp's own output rather than by globbing the output directory
+    convert.go / convert_test.go              — post-download video conversion cascade (fast remux, falling back to a software re-encode only when necessary), replacing yt-dlp's own --recode-video
 
   job/
     job.go                                   — Job struct, state machine (validTransitions), DTO for the frontend
@@ -355,10 +356,63 @@ this package since `internal/updater` never needs to kill anything).
 
 Format-selection logic in `buildArgs`: audio mode uses
 `-f bestaudio/best`; video mode uses `--format-sort res~<height>` (height =
-requested resolution or `utils.MaxResolution` for "Best"). Optional
-`--recode-video`/`-x --audio-format` handles convert-to. Playlists get
-`%(playlist_index)s` appended to the output template and omit
+requested resolution or `utils.MaxResolution` for "Best"). Every download
+also sets `-N`/`--concurrent-fragments` and `--http-chunk-size` (both fixed
+constants, `concurrentFragments`/`httpChunkSize`) so fragmented (DASH/
+hlsnative) and chunked progressive HTTP downloads both fetch in parallel
+rather than serially. Audio convert-to still goes through yt-dlp's own
+`-x --audio-format` (cheap, never the bottleneck); video convert-to is
+handled by `convert.go` instead of `--recode-video` — see below. Playlists
+get `%(playlist_index)s` appended to the output template and omit
 `--no-playlist`; everything else gets `--no-playlist`.
+
+**`convert.go` — post-download video conversion.** `--recode-video` only
+re-encodes "if necessary" (it does a fast, lossless stream-copy remux
+automatically when the source codec is already compatible with the target
+container), but yt-dlp has no way to pick faster encoder settings only for
+the cases that *do* need a real transcode without also affecting the
+free-remux cases — `--postprocessor-args` is appended after yt-dlp's own
+codec choice regardless of whether it ends up copying or encoding. So video
+convert-to jobs download+merge exactly like `ConvertTo == "original"`
+(yt-dlp's default merge container is already `mkv`, which holds effectively
+any codec), and `runAttempt` runs its own cascade afterward, once per
+downloaded item (`convertDownloaded`, over every line
+`readAllDestBaseAndExt` finds in `--print-to-file`'s destination log — a
+playlist logs one line per item, and a source file that's missing on disk
+is skipped rather than erred, since `before_dl` fires before an item's
+download attempt regardless of whether that attempt then succeeds, and
+yt-dlp's default `--no-abort-on-error` means one playlist item failing
+doesn't stop the rest):
+
+1. **Remux** (`ffmpeg -map 0:v:0 -map 0:a:0? -c copy`) — succeeds whenever
+   the source codec is already container-compatible; verified against the
+   bundled ffmpeg that this covers essentially every real case except an
+   H.264-sourced video converted to `webm` (which requires VP8/VP9/AV1
+   video and Vorbis/Opus audio). Explicit stream mapping (required video,
+   optional audio via ffmpeg's `?` stream-specifier suffix) avoids an
+   unexpected extra stream — e.g. an attached-picture cover-art stream —
+   riding along with a blanket `-map 0`.
+2. **Software encode** (`videoContainerSpecs`, one recipe per
+   `utils.VideoConvertOptions` entry, cross-checked by
+   `convert_test.go`) — only reached when the remux fails. Deliberately
+   tuned for speed over each encoder's slower quality-favoring defaults
+   (`-preset veryfast` for libx264, `-cpu-used 4 -row-mt 1` for the
+   notoriously slow-by-default libvpx-vp9), since a hardware-encoder tier
+   was scoped out: real testing showed it would almost never trigger given
+   this app's three convert-to options and how rarely tier 1 fails on a
+   modern ffmpeg build.
+
+`convertVideo`'s own subprocess (`runFFmpeg`) is cancelled the same way
+`runAttempt` cancels yt-dlp — `cancelTree`/`killTree`, unchanged, since
+both are already generic over any `*exec.Cmd`/pid — and mirrors the same
+"a process that finishes successfully right as the cancel signal lands
+still counts as a success" tolerance. That tolerance is why `runAttempt`
+passes the conversion phase a `context.WithoutCancel` copy of its own ctx
+specifically when *yt-dlp itself* (the download+merge step) won successfully
+despite a racing cancel: without it, the already-cancelled ctx would abort
+the conversion phase before it could even start, leaving a raw, unconverted
+file behind instead of finishing the one step still owed to a download that
+had, in fact, completed.
 
 ### 5.3 `internal/manager` — the orchestrator
 
@@ -792,6 +846,22 @@ real network/filesystem/subprocess access via fakes or `httptest`:
   what each cancellation scenario leaves behind) was instead verified via
   a throwaway harness against the bundled binaries and real URLs, run by
   hand and deleted rather than kept as a committed test.
+- **`internal/downloader`** (`convert_test.go`): same no-real-subprocess
+  convention — `readAllDestBaseAndExt`'s multi-line/blank-line/missing-file
+  handling, the ffmpeg argument lists `remuxArgs`/`encodeArgs` build,
+  `videoContainerSpecs` covering every `utils.VideoConvertOptions` entry
+  (so a format added to one without the other fails a test instead of
+  failing silently at runtime), and `convertDownloaded`'s skip logic
+  (already-matching extension, a missing source file, an already-cancelled
+  context) via a deliberately-invalid ffmpeg path — reaching a nil/
+  `ErrCancelled` return proves the skip happened *before* anything tried to
+  actually run it. The remux-vs-encode cascade itself (tier 1 succeeding
+  for h264/vp9/av1 sources into mp4/mkv and for vp9/av1 into webm, only
+  failing — and falling to tier 2 — for h264→webm; mid-conversion
+  cancellation leaving no orphan file; a playlist-style multi-item
+  destination log converting every real item while skipping one that never
+  downloaded) was verified the same throwaway-harness way against the
+  bundled ffmpeg.
 
 No frontend test files are present in the repository.
 

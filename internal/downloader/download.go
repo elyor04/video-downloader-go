@@ -35,6 +35,14 @@ var ErrShutdown = errors.New("app shutdown")
 // escalating to killTree's unconditional hard kill.
 const cancelGracePeriod = 2 * time.Second
 
+// concurrentFragments/httpChunkSize speed up downloads: concurrentFragments
+// parallelizes DASH/hlsnative fragment fetches (-N), httpChunkSize splits
+// progressive HTTP downloads into chunks so multiple can be in flight at
+// once. Both are yt-dlp's own mechanisms, not this app reimplementing
+// parallel fetching.
+const concurrentFragments = "4"
+const httpChunkSize = "10M"
+
 // signinRe mirrors worker_process.py's _SIGNIN_RE.
 var signinRe = regexp.MustCompile(`\b[Ss]ign in\b|--username`)
 
@@ -202,6 +210,13 @@ func runAttempt(ctx context.Context, ytdlpPath string, params Params, auth *auth
 	go func() { waitErr <- cmd.Wait() }()
 
 	var runErr error
+	// convertCtx is what the new conversion phase below is run with --
+	// normally the same ctx runAttempt was given, except when yt-dlp itself
+	// finishes successfully despite a racing cancel (see the comment in the
+	// ctx.Done() branch), where it becomes a cancel-immune copy so that
+	// already-finished download doesn't lose its conversion to the same
+	// timing race.
+	convertCtx := ctx
 	select {
 	case <-ctx.Done():
 		if errors.Is(context.Cause(ctx), ErrShutdown) {
@@ -218,11 +233,15 @@ func runAttempt(ctx context.Context, ytdlpPath string, params Params, auth *auth
 		// can complete normally before the signal has any effect. When
 		// that happens, trust yt-dlp's own success and leave its output
 		// alone rather than deleting a finished download just because the
-		// cancel and the natural finish landed at nearly the same moment.
+		// cancel and the natural finish landed at nearly the same moment
+		// -- and, by the same reasoning, still let the conversion phase
+		// below finish converting it to what was actually requested rather
+		// than abandoning it as a raw, un-converted file.
 		if cmd.ProcessState == nil || !cmd.ProcessState.Success() {
 			leftovers.cleanup(destFile.Name(), params.ConvertTo)
+			return false, ErrCancelled
 		}
-		return false, ErrCancelled
+		convertCtx = context.WithoutCancel(ctx)
 	case runErr = <-waitErr:
 		<-stdoutDone
 		<-stderrDone
@@ -236,6 +255,12 @@ func runAttempt(ctx context.Context, ytdlpPath string, params Params, auth *auth
 		msg := lastErrorLine(strings.Join(stderrLines, "\n"))
 		stderrMu.Unlock()
 		return false, fmt.Errorf("%s", msg)
+	}
+
+	if params.Mode == "video" && params.ConvertTo != "" && params.ConvertTo != "original" {
+		if err := convertDownloaded(convertCtx, utils.FFmpegLocation(), destFile.Name(), params.ConvertTo, cb); err != nil {
+			return false, err
+		}
 	}
 	return false, nil
 }
@@ -259,6 +284,8 @@ func buildArgs(params Params, creds credentials) []string {
 		"--socket-timeout", "30",
 		"--retries", "10",
 		"--fragment-retries", "10",
+		"-N", concurrentFragments,
+		"--http-chunk-size", httpChunkSize,
 		"-o", buildOuttmpl(params),
 		// One JSON object per progress tick; `|0` keeps playlist_index/
 		// n_entries valid JSON when absent (they otherwise render as the
@@ -280,12 +307,22 @@ func buildArgs(params Params, creds credentials) []string {
 		args = append(args, "--format-sort", fmt.Sprintf("res~%d", height))
 	}
 
-	if params.ConvertTo != "" && params.ConvertTo != "original" {
-		if params.Mode == "audio" {
-			args = append(args, "-x", "--audio-format", params.ConvertTo)
-		} else {
-			args = append(args, "--recode-video", params.ConvertTo)
-		}
+	// Audio conversion still goes through yt-dlp's own -x/--audio-format --
+	// it's cheap and was never the bottleneck. Video conversion is handled
+	// by this package's own post-download cascade instead (see convert.go):
+	// --recode-video already skips re-encoding when the source codec is
+	// already compatible with the target container (verified against the
+	// bundled ffmpeg: h264/aac, vp9/opus and av1/opus sources all remux
+	// cleanly into mp4/mkv, and vp9/av1 sources remux cleanly into webm
+	// too), but there's no yt-dlp flag to pick faster encoder settings only
+	// for the cases that *do* need a real transcode (the only one that
+	// reliably does, given this app's mp4/mkv/webm choices: an
+	// h264-sourced video converted to webm) without also affecting the
+	// free-remux cases, since --postprocessor-args is appended after
+	// yt-dlp's own codec choice for every VideoConvertor run regardless of
+	// whether it ends up copying or encoding.
+	if params.Mode == "audio" && params.ConvertTo != "" && params.ConvertTo != "original" {
+		args = append(args, "-x", "--audio-format", params.ConvertTo)
 	}
 
 	if !(params.IsPlaylist && params.DownloadPlaylist) {
